@@ -1,0 +1,23 @@
+{
+  "session_id": "sess-mcp",
+  "transcript_path": "/tmp/demo/.codex/rollout.jsonl",
+  "cwd": "/tmp/demo",
+  "hook_event_name": "PostToolUse",
+  "model": "gpt-5.1-codex",
+  "permission_mode": "default",
+  "tool_name": "mcp__linear__create_issue",
+  "tool_input": {
+    "title": "Flaky release test"
+  },
+  "tool_response": {
+    "isError": true,
+    "content": [
+      {
+        "type": "text",
+        "text": "Error: linear token expired"
+      }
+    ]
+  },
+  "tool_use_id": "call-4",
+  "turn_id": "turn-1"
+}

@@ -1,0 +1,7 @@
+{
+  "session_id": "sess-end",
+  "transcript_path": "/tmp/demo/.codex/rollout.jsonl",
+  "cwd": "/tmp/demo",
+  "hook_event_name": "SessionEnd",
+  "reason": "other"
+}

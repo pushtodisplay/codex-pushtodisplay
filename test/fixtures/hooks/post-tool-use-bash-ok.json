@@ -1,0 +1,15 @@
+{
+  "session_id": "sess-tool-ok",
+  "transcript_path": "/tmp/demo/.codex/rollout.jsonl",
+  "cwd": "/tmp/demo",
+  "hook_event_name": "PostToolUse",
+  "model": "gpt-5.1-codex",
+  "permission_mode": "default",
+  "tool_name": "Bash",
+  "tool_input": {
+    "command": "npm test"
+  },
+  "tool_response": "All 112 tests pass.",
+  "tool_use_id": "call-1",
+  "turn_id": "turn-1"
+}

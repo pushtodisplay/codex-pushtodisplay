@@ -1,0 +1,11 @@
+{
+  "session_id": "sess-model-fail",
+  "transcript_path": "/tmp/demo/.codex/rollout.jsonl",
+  "cwd": "/tmp/demo",
+  "hook_event_name": "PostModelRequest",
+  "model": "gpt-5.1-codex",
+  "status": "failed",
+  "error": "HTTP 500 from provider",
+  "token_usage": null,
+  "turn_id": "turn-1"
+}

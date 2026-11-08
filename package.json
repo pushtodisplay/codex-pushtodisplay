@@ -1,0 +1,59 @@
+{
+  "name": "codex-pushtodisplay",
+  "version": "0.1.0",
+  "description": "Codex plugin that mirrors agent activity onto your Push To Display board as a shared, human-readable log",
+  "type": "module",
+  "license": "MIT",
+  "author": {
+    "name": "Goban Source LLC",
+    "email": "hello@pushtodisplay.com",
+    "url": "https://pushtodisplay.com"
+  },
+  "homepage": "https://pushtodisplay.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pushtodisplay/codex-pushtodisplay.git"
+  },
+  "bugs": {
+    "url": "https://github.com/pushtodisplay/codex-pushtodisplay/issues"
+  },
+  "keywords": [
+    "codex",
+    "codex-plugin",
+    "openai-codex",
+    "pushtodisplay",
+    "push-to-display",
+    "display",
+    "signage",
+    "dashboard",
+    "status-board"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "test": "node --test",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint .",
+    "check": "npm run typecheck && npm run lint && npm test"
+  },
+  "files": [
+    "plugin.json",
+    ".codex-plugin",
+    ".agents",
+    "hooks",
+    "lib",
+    "scripts",
+    "skills",
+    "commands",
+    "README.md",
+    "LICENSE"
+  ],
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@types/node": "^22.15.0",
+    "eslint": "^9.39.1",
+    "globals": "^15.15.0",
+    "typescript": "~5.7.3"
+  }
+}

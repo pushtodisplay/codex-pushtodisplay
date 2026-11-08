@@ -1,0 +1,11 @@
+{
+  "session_id": "sess-stop-active",
+  "transcript_path": "/tmp/demo/.codex/rollout.jsonl",
+  "cwd": "/tmp/demo",
+  "hook_event_name": "Stop",
+  "model": "gpt-5.1-codex",
+  "permission_mode": "default",
+  "last_assistant_message": "Pinned the clock so the release test passes.",
+  "stop_hook_active": true,
+  "turn_id": "turn-1"
+}

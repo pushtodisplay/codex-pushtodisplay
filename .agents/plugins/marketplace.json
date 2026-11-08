@@ -1,0 +1,26 @@
+{
+  "name": "pushtodisplay",
+  "interface": {
+    "displayName": "Push To Display"
+  },
+  "plugins": [
+    {
+      "name": "pushtodisplay",
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity",
+      "interface": {
+        "displayName": "Push To Display",
+        "shortDescription": "Mirror Codex activity onto a Push To Display board.",
+        "developerName": "Goban Source LLC",
+        "websiteURL": "https://pushtodisplay.com"
+      }
+    }
+  ]
+}

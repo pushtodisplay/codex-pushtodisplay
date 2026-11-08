@@ -1,0 +1,25 @@
+{
+  "name": "pushtodisplay",
+  "version": "0.1.0",
+  "description": "Mirror Codex agent activity onto your Push To Display board as a shared, human-readable log (lifecycle, tasks, tool steps, approvals, results, errors).",
+  "skills": "./skills/",
+  "commands": "./commands/",
+  "hooks": "./hooks/hooks.json",
+  "onboardingSkill": "./skills/setup/SKILL.md",
+  "interface": {
+    "displayName": "Push To Display",
+    "shortDescription": "Mirror Codex activity onto a Push To Display board.",
+    "longDescription": "Every Codex session becomes a shared, human-readable scrolling log on your Push To Display board: a READY line when the session opens, the task it is working on, each finished tool step, approvals that need you, the agent's closing words, provider errors, interruptions, and the session close.",
+    "developerName": "Goban Source LLC",
+    "category": "Productivity",
+    "capabilities": [
+      "Write"
+    ],
+    "websiteURL": "https://pushtodisplay.com",
+    "defaultPrompt": [
+      "Show my Codex activity on Push To Display.",
+      "Check whether my Push To Display board is receiving Codex updates."
+    ],
+    "brandColor": "#5ec8d4"
+  }
+}

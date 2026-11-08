@@ -1,0 +1,10 @@
+{
+  "session_id": "sess-task",
+  "transcript_path": "/tmp/demo/.codex/rollout.jsonl",
+  "cwd": "/tmp/demo",
+  "hook_event_name": "UserPromptSubmit",
+  "model": "gpt-5.1-codex",
+  "permission_mode": "default",
+  "prompt": "Fix the flaky release test. Then run the whole suite.",
+  "turn_id": "turn-1"
+}

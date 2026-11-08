@@ -1,0 +1,17 @@
+{
+  "session_id": "sess-subagent-tool",
+  "transcript_path": "/tmp/demo/.codex/rollout.jsonl",
+  "cwd": "/tmp/demo",
+  "hook_event_name": "PostToolUse",
+  "model": "gpt-5.1-codex",
+  "permission_mode": "default",
+  "agent_id": "agent-7",
+  "agent_type": "explore",
+  "tool_name": "Bash",
+  "tool_input": {
+    "command": "rg TODO src"
+  },
+  "tool_response": "Process exited with code 0\n",
+  "tool_use_id": "call-5",
+  "turn_id": "turn-1"
+}

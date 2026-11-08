@@ -1,0 +1,17 @@
+{
+  "session_id": "sess-model-ok",
+  "transcript_path": "/tmp/demo/.codex/rollout.jsonl",
+  "cwd": "/tmp/demo",
+  "hook_event_name": "PostModelRequest",
+  "model": "gpt-5.1-codex",
+  "status": "completed",
+  "error": null,
+  "token_usage": {
+    "cached_input_tokens": 0,
+    "input_tokens": 1200,
+    "output_tokens": 90,
+    "reasoning_output_tokens": 0,
+    "total_tokens": 1290
+  },
+  "turn_id": "turn-1"
+}
