@@ -20,9 +20,12 @@ fi
 node "$SCRIPT" status
 ```
 
-Run the helper exactly once and relay its output verbatim. Do not run it a
-second time and do not add a separate summary; the helper already prints the
-board, panel, label, auth, and setup lines. If auth or setup is incomplete, tell
-the user to run the `setup` skill.
+Run the helper exactly once. Its output is already shown to the user, so do not
+print the status block again and do not add a separate summary. Reply with one
+short sentence:
+
+- If `Auth` is “logged in” and `Setup` is “complete”: “Push To Display is set up
+  and authenticated.”
+- Otherwise: “Push To Display is not set up yet; run `$pushtodisplay:setup`.”
 
 The plugin bundles its own CLI; do not suggest installing a separate one.

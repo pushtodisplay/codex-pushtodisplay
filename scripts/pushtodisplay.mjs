@@ -157,6 +157,9 @@ async function login() {
 
   if (code !== 0) {
     process.stderr.write(`Login exited with code ${code}.\n`);
+    process.stderr.write(
+      "If this was a network or DNS error, run setup from a normal terminal with network access.\n",
+    );
     process.exitCode = 1;
     return;
   }
@@ -192,7 +195,12 @@ async function setup() {
   if (!authed) {
     process.stdout.write("Push To Display is not logged in. Starting device-code login…\n");
     await login();
-    if (process.exitCode === 1) return;
+    if (process.exitCode === 1) {
+      process.stderr.write(
+        "Setup did not complete. If login hit a network/DNS error, run this setup command from a normal terminal with network access.\n",
+      );
+      return;
+    }
     authed = await authStatus({ env, pluginRoot, timeoutMs: 10_000 });
     if (!authed) {
       process.stderr.write("Login finished but auth is still not available.\n");

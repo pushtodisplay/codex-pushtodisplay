@@ -48,6 +48,11 @@ marker. Without the marker, this plugin stays silent.
 Open the URL for the user when possible. Never ask them to paste a token into
 the chat.
 
+If the helper reports `fetch failed`, `getaddrinfo`, or a DNS error, Codex’s
+command sandbox cannot reach `idp.pushtodisplay.com`. Run the same helper from a
+normal terminal with network access; it writes the shared setup marker, and
+Codex will pick it up. Do not treat this as an authentication failure.
+
 ## 3. Confirm
 
 Run the status helper and summarize the result:

@@ -54,7 +54,7 @@ cat > ~/.agents/plugins/marketplace.json <<'JSON'
       "source": {
         "source": "npm",
         "package": "codex-pushtodisplay",
-        "version": "0.1.3"
+        "version": "0.1.4"
       },
       "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
       "category": "Productivity"
@@ -78,7 +78,7 @@ To verify the package directly, install it in a temporary directory:
 tmp="$(mktemp -d)"
 cd "$tmp"
 npm init -y >/dev/null
-npm install codex-pushtodisplay@0.1.3
+npm install codex-pushtodisplay@0.1.4
 test -f node_modules/codex-pushtodisplay/vendor/pushtodisplay/dist/cli.js
 echo "vendored CLI present"
 ```
