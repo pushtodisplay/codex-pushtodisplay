@@ -27,7 +27,7 @@ Run the device-code flow and show the URL and code:
 if command -v pushtodisplay >/dev/null 2>&1; then
   pushtodisplay auth login --device-code
 else
-  npx --yes pushtodisplay auth login --device-code
+  npx --yes pushtodisplay@0.1.19 auth login --device-code
 fi
 ```
 

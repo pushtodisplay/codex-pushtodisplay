@@ -35,20 +35,25 @@
     "test": "node --test",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "eslint .",
-    "check": "npm run typecheck && npm run lint && npm test"
+    "check": "npm run typecheck && npm run lint && npm test",
+    "prepublishOnly": "npm run check"
   },
   "files": [
     "plugin.json",
     ".codex-plugin",
-    ".agents",
     "hooks",
     "lib",
     "scripts",
     "skills",
     "commands",
+    "vendor",
+    "docs",
     "README.md",
     "LICENSE"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
     "@types/node": "^22.15.0",

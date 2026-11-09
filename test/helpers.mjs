@@ -110,6 +110,7 @@ export function createHarness(opts = {}) {
     PATH: `${bin}${path.delimiter}${process.env.PATH ?? ""}`,
     HOME: home,
     PUSHTODISPLAY_CACHE_DIR: cache,
+    PUSHTODISPLAY_CLI: fake,
     PUSHTODISPLAY_SEND_INTERVAL_MS: String(opts.intervalMs ?? 0),
     FAKE_PTD_LOG: logPath,
     FAKE_PTD_AUTH: opts.auth === false ? "0" : "1",

@@ -68,7 +68,7 @@ function openBrowser(url) {
  */
 function cliLabel(env) {
   const command = resolveCli({ env, pluginRoot });
-  if (command.source === "npx") return "npx --yes pushtodisplay (not installed)";
+  if (command.source === "npx") return `${command.display} (not installed)`;
   return `${command.display} (${command.source})`;
 }
 

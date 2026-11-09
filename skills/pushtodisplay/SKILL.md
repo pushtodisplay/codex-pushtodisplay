@@ -79,7 +79,7 @@ that changes the hook script requires a new review.
   step).
 - The `pushtodisplay` CLI: bundled if present in the plugin's `node_modules`,
   otherwise a `pushtodisplay` binary on `PATH`, otherwise
-  `npx --yes pushtodisplay`. For reliable final lines (`Interrupt`,
+  `npx --yes pushtodisplay@0.1.19`. For reliable final lines (`Interrupt`,
   `SessionEnd`), install it globally: `npm i -g pushtodisplay`.
 - An authenticated Push To Display account (`pushtodisplay auth login
   --device-code`).
@@ -133,7 +133,7 @@ PUSHTODISPLAY_PANEL=2 PUSHTODISPLAY_LABEL=qa codex
   buffered, until login; the hook re-probes every 20 seconds and login
   re-enables sending immediately.
 - **CLI not found** — `npm i -g pushtodisplay`. The plugin falls back to
-  `npx --yes pushtodisplay`, which is slower and may exceed short final-event
+  `npx --yes pushtodisplay@0.1.19`, which is slower and may exceed short final-event
   timeouts.
 - **Wrong panel** — `PUSHTODISPLAY_PANEL` must be 1–4; anything else falls back
   to 1. `/pushtodisplay-status` (or the helper's `status`) shows the resolved

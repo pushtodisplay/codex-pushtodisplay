@@ -63,6 +63,11 @@ tools") because a counter answers a question nobody asked.
 
 ## Install
 
+There are two supported distribution paths: the **repository marketplace** and
+**npm**. The public OpenAI Plugins Directory is not available because it rejects
+plugin packages that contain lifecycle hooks; this plugin is hooks-based. See
+[docs/distribution.md](docs/distribution.md) for the full explanation.
+
 ### From the repository marketplace
 
 ```bash
@@ -70,14 +75,52 @@ codex plugin marketplace add pushtodisplay/codex-pushtodisplay
 codex plugin add pushtodisplay@pushtodisplay
 ```
 
+### From npm
+
+The published package is `codex-pushtodisplay`. It vendors the pinned
+`pushtodisplay` CLI 0.1.19, so an npm-source install carries its own CLI. Add a
+personal marketplace entry with an npm source, then install:
+
+```bash
+mkdir -p ~/.agents/plugins
+cat > ~/.agents/plugins/marketplace.json <<'JSON'
+{
+  "name": "pushtodisplay-npm",
+  "interface": { "displayName": "Push To Display (npm)" },
+  "plugins": [
+    {
+      "name": "pushtodisplay",
+      "source": {
+        "source": "npm",
+        "package": "codex-pushtodisplay",
+        "version": "0.1.0"
+      },
+      "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
+      "category": "Productivity"
+    }
+  ]
+}
+JSON
+codex plugin add pushtodisplay@pushtodisplay-npm
+```
+
+If `~/.agents/plugins/marketplace.json` already exists, merge the plugin entry
+into its `plugins` array instead of replacing the file. Codex reads the personal
+marketplace automatically; `codex plugin marketplace list` shows what it sees.
+
 ### From a local checkout
 
 ```bash
 git clone https://github.com/pushtodisplay/codex-pushtodisplay.git
 cd codex-pushtodisplay
+npm ci
 codex plugin marketplace add "$PWD"
 codex plugin add pushtodisplay@pushtodisplay
 ```
+
+The plugin vendors the pinned `pushtodisplay` CLI, so `npm ci` is only needed
+for development. The hook resolves the vendored copy first; a binary on `PATH`
+and the pinned npx fallback remain available.
 
 Inspect the result:
 
@@ -106,16 +149,18 @@ prompt for that invocation.
 - **Codex CLI 0.167.x** (hooks, including plugin-bundled hooks).
 - **Node.js 18+** — the hook is plain ESM with no build step.
 - **The `pushtodisplay` CLI.** Resolution order:
-  1. a bundled `node_modules/pushtodisplay` dependency, if present;
+  1. the vendored `vendor/pushtodisplay` CLI (or an installed
+     `node_modules/pushtodisplay` dependency);
   2. a `pushtodisplay` binary on `PATH`;
-  3. `npx --yes pushtodisplay`.
+  3. `npx --yes pushtodisplay@0.1.19`.
 - **A Push To Display account**, authenticated through the CLI.
 
-The plugin does not vendor the CLI. For reliable final lines (`Interrupt` and
-`SessionEnd` have a three-second hook budget) install it globally:
+The repository-marketplace and npm installs both carry the vendored CLI, so a
+separate global install is optional. Set `PUSHTODISPLAY_CLI` to an absolute path
+to use a different CLI build. For a global install:
 
 ```bash
-npm i -g pushtodisplay
+npm i -g pushtodisplay@0.1.19
 pushtodisplay auth login --device-code
 ```
 
@@ -151,7 +196,7 @@ on, each finished tool step, approvals that need you, errors, and when it ends.
 ## Commands
 
 Codex 0.167.x plugins bundle **skills**, not shell-backed slash commands. The
-portable command surface is therefore a script, and the plugin also exposes each
+stable command surface is therefore a script, and the plugin also exposes each
 action as a skill so it appears in the skill/slash picker and can be invoked as
 a skill mention on surfaces that support one. In Codex 0.167 the installed
 skills are namespaced:
@@ -178,10 +223,9 @@ The deterministic, model-free path is the bundled helper:
 Run the script from the installed plugin directory, or use the CLI commands
 directly (`pushtodisplay auth status --json`, `pushtodisplay send ...`).
 
-> **Legacy note:** `commands/*.md` is included for Codex-compatible legacy
-> plugin installs, which migrate them to `source-command-*` skills. The portable
-> Agent Plugins manifest used here does not expose a command component, so the
-> skills above and the script are the supported surface.
+> **Legacy note:** `commands/*.md` is included for Codex-compatible installs,
+> which expose them as `source-command-*` skills. The skills above and the script
+> are the stable surface.
 
 ## Configuration
 
@@ -302,7 +346,7 @@ command. Sending resumes on the next event; the plugin re-probes at most every
 
 **`Push To Display CLI not found`.**
 
-The hook falls back to `npx --yes pushtodisplay`, which can be slow enough to
+The hook falls back to `npx --yes pushtodisplay@0.1.19`, which can be slow enough to
 miss the three-second `Interrupt`/`SessionEnd` budget. Install it globally:
 
 ```bash
@@ -348,8 +392,8 @@ build step and no generated `dist/`.
 
 | Path | Responsibility |
 | --- | --- |
-| `plugin.json` | Portable Agent Plugins manifest + `extensions.com.openai`. |
-| `.codex-plugin/plugin.json` | Compatibility fallback for older Codex builds. |
+| `plugin.json` | Codex plugin manifest: identity, `skills`, `commands`. The `$schema` field is intentionally omitted; Codex 0.167 treats it as the portable format and does not load bundled hooks in that mode. |
+| `.codex-plugin/plugin.json` | Codex 0.167 compatibility manifest: `hooks`, `interface`, and `extensions.com.openai.onboardingSkill`. |
 | `.agents/plugins/marketplace.json` | Repo marketplace entry (`source.path: "./"`). |
 | `hooks/hooks.json` | Lifecycle wiring; `${PLUGIN_ROOT}/hooks/hook.mjs`. |
 | `hooks/hook.mjs` | One silent hook process: read stdin, update state, exit 0. |
@@ -364,7 +408,11 @@ build step and no generated `dist/`.
 | `lib/sender.mjs` | Apply an event, gate auth, drain the queue. |
 | `lib/hook-events.mjs` | Codex hook event -> message mapping. |
 | `scripts/pushtodisplay.mjs` | Operator CLI: login/status/test/clear. |
+| `vendor/pushtodisplay/` | Pinned `pushtodisplay` CLI 0.1.19; no install step needed. |
 | `skills/`, `commands/` | Usage guidance and command skills. |
+| `docs/distribution.md` | Repo marketplace, npm, and the public-directory blocker. |
+| `docs/publishing.md` | First publish and ongoing release steps. |
+| `.github/workflows/publish.yml` | OIDC/Trusted Publishing release workflow. |
 
 ### Validating the plugin
 
@@ -375,9 +423,21 @@ npx @openai/codex plugin list
 npx @openai/codex plugin add pushtodisplay@pushtodisplay
 ```
 
-Bundled hooks require review in `/hooks` before they run. The Codex CLI can
-list and install the plugin without an account; running a turn (and therefore
-seeing real hook traffic) requires being signed in to Codex.
+To inspect hook discovery without touching your real Codex home, use an isolated
+`CODEX_HOME`:
+
+```bash
+export CODEX_HOME="$(mktemp -d)"
+codex plugin marketplace add "$PWD"
+codex plugin add pushtodisplay@pushtodisplay --json
+codex plugin list --json
+```
+
+The installed plugin's `hooks/hooks.json` should appear in Codex's hook list
+(`/hooks` in the TUI, or the app-server `hooks/list` method). Bundled hooks
+require review in `/hooks` before they run. The Codex CLI can list and install
+the plugin without an account; running a turn (and therefore seeing real hook
+traffic) requires being signed in to Codex.
 
 ## Security
 

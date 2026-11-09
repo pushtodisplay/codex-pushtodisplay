@@ -18,7 +18,7 @@ Auth comes from the `pushtodisplay` CLI:
 if command -v pushtodisplay >/dev/null 2>&1; then
   pushtodisplay auth status --json
 else
-  npx --yes pushtodisplay auth status --json
+  npx --yes pushtodisplay@0.1.19 auth status --json
 fi
 ```
 

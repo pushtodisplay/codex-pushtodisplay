@@ -6,6 +6,7 @@ import * as path from "node:path";
 import test from "node:test";
 
 import {
+  PUSHTODISPLAY_CLI_VERSION,
   authStatus,
   findOnPath,
   isAuthFailure,
@@ -94,7 +95,7 @@ test("resolveCli finds a bundled npm dependency", () => {
         bin: { pushtodisplay: "./cli.js" },
       }),
     );
-    const command = resolveCli({ env: { PATH: "" }, pluginRoot: root.root });
+    const command = resolveCli({ env: { PATH: "" }, pluginRoot: root.root, cwd: root.root });
     assert.equal(command.source, "bundled");
     assert.equal(command.exe, process.execPath);
     assert.deepEqual(command.prefix, [path.join(pkgRoot, "cli.js")]);
@@ -107,14 +108,14 @@ test("resolveCli falls back to PATH, then to npx", () => {
   const fake = fakeCli();
   const root = emptyRoot();
   try {
-    const onPath = resolveCli({ env: { PATH: fake.root }, pluginRoot: root.root });
+    const onPath = resolveCli({ env: { PATH: fake.root }, pluginRoot: root.root, cwd: root.root });
     assert.equal(onPath.source, "path");
     assert.equal(onPath.exe, fake.bin);
 
-    const viaNpx = resolveCli({ env: { PATH: "" }, pluginRoot: root.root });
+    const viaNpx = resolveCli({ env: { PATH: "" }, pluginRoot: root.root, cwd: root.root });
     assert.equal(viaNpx.source, "npx");
     assert.equal(viaNpx.exe, "npx");
-    assert.deepEqual(viaNpx.prefix, ["--yes", "pushtodisplay"]);
+    assert.deepEqual(viaNpx.prefix, ["--yes", `pushtodisplay@${PUSHTODISPLAY_CLI_VERSION}`]);
   } finally {
     fake.cleanup();
     root.cleanup();
@@ -141,12 +142,12 @@ test("authStatus reads the JSON contract", async () => {
   const root = emptyRoot();
   try {
     await assert.doesNotReject(
-      authStatus({ env: { PATH: authed.root }, pluginRoot: root.root }).then((value) =>
-        assert.equal(value, true),
+      authStatus({ env: { PATH: authed.root }, pluginRoot: root.root, cwd: root.root }).then(
+        (value) => assert.equal(value, true),
       ),
     );
     assert.equal(
-      await authStatus({ env: { PATH: denied.root }, pluginRoot: root.root }),
+      await authStatus({ env: { PATH: denied.root }, pluginRoot: root.root, cwd: root.root }),
       false,
     );
   } finally {
@@ -164,14 +165,17 @@ test("authStatus falls back to legacy text and treats a missing CLI as denied", 
   const root = emptyRoot();
   try {
     assert.equal(
-      await authStatus({ env: { PATH: legacyOk.root }, pluginRoot: root.root }),
+      await authStatus({ env: { PATH: legacyOk.root }, pluginRoot: root.root, cwd: root.root }),
       true,
     );
     assert.equal(
-      await authStatus({ env: { PATH: legacyDenied.root }, pluginRoot: root.root }),
+      await authStatus({ env: { PATH: legacyDenied.root }, pluginRoot: root.root, cwd: root.root }),
       false,
     );
-    assert.equal(await authStatus({ env: { PATH: "" }, pluginRoot: root.root }), false);
+    assert.equal(
+      await authStatus({ env: { PATH: "" }, pluginRoot: root.root, cwd: root.root }),
+      false,
+    );
   } finally {
     legacyOk.cleanup();
     legacyDenied.cleanup();

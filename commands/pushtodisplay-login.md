@@ -10,7 +10,7 @@ Run the device-code login and show the user the URL and code it prints:
 if command -v pushtodisplay >/dev/null 2>&1; then
   pushtodisplay auth login --device-code
 else
-  npx --yes pushtodisplay auth login --device-code
+  npx --yes pushtodisplay@0.1.19 auth login --device-code
 fi
 ```
 
@@ -22,7 +22,7 @@ into the chat. When the command finishes, verify with:
 if command -v pushtodisplay >/dev/null 2>&1; then
   pushtodisplay auth status --json
 else
-  npx --yes pushtodisplay auth status --json
+  npx --yes pushtodisplay@0.1.19 auth status --json
 fi
 ```
 

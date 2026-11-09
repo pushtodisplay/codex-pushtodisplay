@@ -16,7 +16,7 @@ else
   if command -v pushtodisplay >/dev/null 2>&1; then
     pushtodisplay send -p "${PUSHTODISPLAY_PANEL:-1}" "link OK, test"
   else
-    npx --yes pushtodisplay send -p "${PUSHTODISPLAY_PANEL:-1}" "link OK, test"
+    npx --yes pushtodisplay@0.1.19 send -p "${PUSHTODISPLAY_PANEL:-1}" "link OK, test"
   fi
 fi
 ```

@@ -56,7 +56,7 @@ test("status reports the resolved CLI, config, and auth state", async () => {
     assert.equal(status.steps, false);
     assert.equal(status.disabled, false);
     assert.ok(status.cli.includes("pushtodisplay"));
-    assert.ok(status.cli.includes("path"));
+    assert.ok(status.cli.includes("env"));
     assert.ok(status.cacheDir);
   } finally {
     harness.cleanup();

@@ -1,10 +1,11 @@
 // @ts-check
-/** Manifest, hook wiring, marketplace, skill, and command validation. */
+/** Manifest, hook wiring, marketplace, skill, command, and release validation. */
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import * as path from "node:path";
 import test from "node:test";
 
+import { PUSHTODISPLAY_CLI_VERSION, resolveCli } from "../lib/cli-adapter.mjs";
 import { repoRoot } from "./helpers.mjs";
 
 /** @param {string} relative */
@@ -41,9 +42,8 @@ function frontmatter(text) {
   return { frontmatter: data, body: text.slice(end + 5) };
 }
 
-test("root plugin.json uses the Agent Plugins schema and identity", () => {
+test("root plugin.json is a Codex manifest with identity and components", () => {
   const plugin = readJson("plugin.json");
-  assert.equal(plugin.$schema, "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json");
   assert.equal(plugin.name, "pushtodisplay");
   assert.match(plugin.name, /^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$/);
   assert.equal(plugin.version, "0.1.0");
@@ -53,20 +53,19 @@ test("root plugin.json uses the Agent Plugins schema and identity", () => {
   assert.match(plugin.repository, /^https:\/\/github\.com\/pushtodisplay\/codex-pushtodisplay/);
   assert.equal(plugin.license, "MIT");
   assert.ok(Array.isArray(plugin.keywords) && plugin.keywords.includes("codex-plugin"));
+  assert.equal(plugin.skills, "./skills/");
+  assert.ok(existsSync(path.join(repoRoot, plugin.skills)));
+  assert.equal(plugin.commands, "./commands/");
+  assert.ok(existsSync(path.join(repoRoot, plugin.commands)));
 
-  const openai = plugin.extensions?.["com.openai"];
-  assert.ok(openai, "extensions.com.openai is required for Codex");
-  assert.equal(openai.hooks, "./hooks/hooks.json");
-  assert.ok(existsSync(path.join(repoRoot, openai.hooks)));
-  assert.equal(openai.onboardingSkill, "./skills/setup/SKILL.md");
-  assert.ok(existsSync(path.join(repoRoot, openai.onboardingSkill)));
-  assert.equal(openai.interface.displayName, "Push To Display");
-  assert.equal(openai.interface.developerName, "Goban Source LLC");
-  assert.equal(openai.interface.websiteURL, "https://pushtodisplay.com");
-  assert.ok(Array.isArray(openai.interface.defaultPrompt));
+  // Codex 0.167 treats a root `$schema` as the portable Agent Plugins format
+  // and does not load bundled lifecycle hooks in that mode. The compatibility
+  // manifest carries the OpenAI-specific settings instead.
+  assert.equal(plugin.$schema, undefined, "omit $schema so Codex loads plugin hooks");
+  assert.equal(plugin.extensions, undefined, "OpenAI settings belong in .codex-plugin");
 });
 
-test("the .codex-plugin compatibility manifest matches the portable identity", () => {
+test("the .codex-plugin compatibility manifest carries hooks, UI, and onboarding", () => {
   const plugin = readJson("plugin.json");
   const legacy = readJson(".codex-plugin/plugin.json");
   assert.equal(legacy.name, plugin.name);
@@ -76,7 +75,21 @@ test("the .codex-plugin compatibility manifest matches the portable identity", (
   assert.ok(existsSync(path.join(repoRoot, legacy.hooks)));
   assert.equal(legacy.skills, "./skills/");
   assert.equal(legacy.commands, "./commands/");
-  assert.equal(legacy.interface.displayName, plugin.extensions["com.openai"].interface.displayName);
+  assert.equal(legacy.interface.displayName, "Push To Display");
+  assert.equal(legacy.interface.developerName, "Goban Source LLC");
+  assert.equal(legacy.interface.websiteURL, "https://pushtodisplay.com");
+  assert.ok(Array.isArray(legacy.interface.defaultPrompt));
+
+  const onboarding = legacy.extensions?.["com.openai"]?.onboardingSkill;
+  assert.equal(onboarding, "./skills/setup/SKILL.md");
+  assert.ok(existsSync(path.join(repoRoot, onboarding)));
+  assert.equal(legacy.onboardingSkill, undefined, "0.167 reads onboarding from extensions.com.openai");
+});
+
+test("package, plugin, and compatibility versions stay in sync", () => {
+  const pkg = readJson("package.json");
+  assert.equal(readJson("plugin.json").version, pkg.version);
+  assert.equal(readJson(".codex-plugin/plugin.json").version, pkg.version);
 });
 
 test("the repo marketplace points at the plugin root", () => {
@@ -165,22 +178,47 @@ test("skills carry required frontmatter", () => {
   }
 });
 
-test("package scripts and runtime constraints are present", () => {
+test("the vendored CLI is pinned and resolves without PATH", () => {
+  const vendor = readJson("vendor/pushtodisplay/package.json");
+  assert.equal(vendor.name, "pushtodisplay");
+  assert.equal(vendor.version, PUSHTODISPLAY_CLI_VERSION);
+  assert.equal(vendor.bin.pushtodisplay, "./dist/cli.js");
+  assert.ok(existsSync(path.join(repoRoot, "vendor/pushtodisplay/dist/cli.js")));
+
+  const command = resolveCli({ env: { PATH: "" }, pluginRoot: repoRoot, cwd: repoRoot });
+  assert.equal(command.source, "bundled");
+  assert.ok(command.prefix[0].includes(path.join("vendor", "pushtodisplay", "dist", "cli.js")));
+});
+
+test("package scripts and published files are release-ready", () => {
   const pkg = readJson("package.json");
   assert.equal(pkg.type, "module");
   assert.equal(pkg.scripts.test, "node --test");
   assert.ok(pkg.scripts.typecheck.includes("tsc"));
   assert.ok(pkg.scripts.lint.includes("eslint"));
+  assert.ok(pkg.scripts.check.includes("typecheck"));
+  assert.ok(pkg.scripts.prepublishOnly.includes("check"));
   assert.ok(pkg.engines.node.includes("18"));
-  for (const entry of ["hooks", "lib", "scripts", "skills", "commands", "plugin.json"]) {
+  assert.equal(pkg.dependencies, undefined, "the CLI is vendored, not installed from npm");
+  assert.equal(pkg.bundleDependencies, undefined);
+
+  for (const entry of ["hooks", "lib", "scripts", "skills", "commands", "plugin.json", "vendor"]) {
     assert.ok(pkg.files.includes(entry), `package files should include ${entry}`);
+  }
+  assert.ok(pkg.files.includes(".codex-plugin"));
+  assert.ok(pkg.files.includes("docs"));
+  for (const excluded of ["test", "eslint.config.mjs", "tsconfig.json", ".github", ".agents"]) {
+    assert.equal(pkg.files.includes(excluded), false, `package files should exclude ${excluded}`);
   }
 });
 
-test("the README documents install, trust, config, commands, behavior and testing", () => {
+test("README and release docs document both distribution paths and the directory blocker", () => {
   const readme = readText("README.md");
   for (const phrase of [
     "codex plugin marketplace add",
+    "codex plugin add",
+    "npm",
+    "pushtodisplay@0.1.19",
     "/hooks",
     "PUSHTODISPLAY_BOARD_ID",
     "PUSHTODISPLAY_PANEL",
@@ -190,8 +228,33 @@ test("the README documents install, trust, config, commands, behavior and testin
     "pushtodisplay-login",
     "npm test",
     "Troubleshooting",
+    "docs/distribution.md",
+    "docs/publishing.md",
   ]) {
     assert.ok(readme.includes(phrase), `README should mention ${phrase}`);
+  }
+
+  const distribution = readText("docs/distribution.md");
+  for (const phrase of [
+    "codex plugin marketplace add",
+    "codex plugin add",
+    "npm",
+    "lifecycle hooks",
+    "public plugin directory",
+  ]) {
+    assert.ok(distribution.includes(phrase), `distribution docs should mention ${phrase}`);
+  }
+
+  const publishing = readText("docs/publishing.md");
+  for (const phrase of [
+    "npm publish",
+    "--provenance",
+    "Trusted Publishing",
+    "prepublishOnly",
+    "npm view",
+    "NPM_TOKEN",
+  ]) {
+    assert.ok(publishing.includes(phrase), `publishing docs should mention ${phrase}`);
   }
 });
 

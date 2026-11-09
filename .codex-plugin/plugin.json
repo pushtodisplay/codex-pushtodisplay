@@ -5,7 +5,6 @@
   "skills": "./skills/",
   "commands": "./commands/",
   "hooks": "./hooks/hooks.json",
-  "onboardingSkill": "./skills/setup/SKILL.md",
   "interface": {
     "displayName": "Push To Display",
     "shortDescription": "Mirror Codex activity onto a Push To Display board.",
@@ -21,5 +20,10 @@
       "Check whether my Push To Display board is receiving Codex updates."
     ],
     "brandColor": "#5ec8d4"
+  },
+  "extensions": {
+    "com.openai": {
+      "onboardingSkill": "./skills/setup/SKILL.md"
+    }
   }
 }
