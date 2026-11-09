@@ -94,7 +94,9 @@ $pushtodisplay:setup
 ```
 
 It logs you in if needed, sends a test entry, and records that this Codex
-integration is set up. The plugin includes its own Push To Display CLI; do not
+integration is set up. Codex may ask you to approve network access for this one
+command; approve it once so setup can reach `idp.pushtodisplay.com` and
+`api.pushtodisplay.com`. The plugin includes its own Push To Display CLI; do not
 install a separate CLI. Installation alone does not send anything: a login from
 another integration on the same machine does not enable Codex until this setup
 step runs.
@@ -246,6 +248,13 @@ cannot be distinguished from success by the hook contract and is posted `OK`.
 4. Run `$pushtodisplay:pushtodisplay-status` and check the resolved board,
    panel, auth, and setup state.
 5. Run `$pushtodisplay:pushtodisplay-test` and look for the `link OK` line.
+
+**Setup asks for network approval.**
+
+Approve it once. Setup needs to reach `idp.pushtodisplay.com` and
+`api.pushtodisplay.com`. If Codex rejects escalation or you deny it, run the
+setup helper from a normal terminal with network access; it writes the same
+setup marker and Codex will pick it up.
 
 **Updates stop after working for a while.**
 

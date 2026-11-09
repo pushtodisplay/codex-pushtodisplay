@@ -1,6 +1,6 @@
 {
   "name": "pushtodisplay",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Mirror Codex agent activity onto your Push To Display board as a shared, human-readable log (lifecycle, tasks, tool steps, approvals, results, errors).",
   "skills": "./skills/",
   "hooks": "./hooks/hooks.json",

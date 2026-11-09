@@ -158,7 +158,7 @@ async function login() {
   if (code !== 0) {
     process.stderr.write(`Login exited with code ${code}.\n`);
     process.stderr.write(
-      "If this was a network or DNS error, run setup from a normal terminal with network access.\n",
+      "If this was a network or DNS error, retry with network/escalated permissions; if escalation is unavailable, run setup from a normal terminal with network access.\n",
     );
     process.exitCode = 1;
     return;
@@ -197,7 +197,7 @@ async function setup() {
     await login();
     if (process.exitCode === 1) {
       process.stderr.write(
-        "Setup did not complete. If login hit a network/DNS error, run this setup command from a normal terminal with network access.\n",
+        "Setup did not complete. If login hit a network/DNS error, retry with network/escalated permissions; if escalation is unavailable, run this setup command from a normal terminal with network access.\n",
       );
       return;
     }

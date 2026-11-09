@@ -21,7 +21,11 @@ a plugin update can prompt for review again.
 
 ## 2. Run the plugin setup
 
-Use the helper that ships inside the plugin:
+Run the helper with **escalated permissions** so it can reach the Push To Display
+identity and API hosts. Use `sandbox_permissions: require_escalated` with the
+justification:
+
+> Push To Display setup needs network access to idp.pushtodisplay.com and api.pushtodisplay.com.
 
 ```bash
 SCRIPT="${PLUGIN_ROOT:+$PLUGIN_ROOT/scripts/pushtodisplay.mjs}"
@@ -34,6 +38,10 @@ if [ -z "$SCRIPT" ]; then
 fi
 node "$SCRIPT" setup
 ```
+
+Codex should show one approval prompt. Tell the user to approve it once. Do not
+send them to a separate terminal unless Codex rejects escalation or the user
+denies it.
 
 The helper:
 
@@ -48,10 +56,13 @@ marker. Without the marker, this plugin stays silent.
 Open the URL for the user when possible. Never ask them to paste a token into
 the chat.
 
-If the helper reports `fetch failed`, `getaddrinfo`, or a DNS error, Codex’s
-command sandbox cannot reach `idp.pushtodisplay.com`. Run the same helper from a
-normal terminal with network access; it writes the shared setup marker, and
-Codex will pick it up. Do not treat this as an authentication failure.
+If the helper reports `fetch failed`, `getaddrinfo`, or a DNS error, it ran
+without network. Retry it with `sandbox_permissions: require_escalated`. Only if
+escalation is unavailable or denied should the user run the same helper from a
+normal terminal with network access; that also writes the shared setup marker.
+
+If setup is blocked, explain the blocker once and give one next action. Do not
+repeat the same explanation.
 
 ## 3. Confirm
 

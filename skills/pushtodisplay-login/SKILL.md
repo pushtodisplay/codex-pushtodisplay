@@ -9,6 +9,12 @@ Use this after setup is already complete and the account needs to log in again.
 On a fresh install, run the `setup` skill instead — login alone does not mark a
 new Codex integration as set up.
 
+Run the helper with **escalated permissions** so it can reach the Push To Display
+identity host. Use `sandbox_permissions: require_escalated` with the
+justification:
+
+> Push To Display login needs network access to idp.pushtodisplay.com.
+
 ```bash
 SCRIPT="${PLUGIN_ROOT:+$PLUGIN_ROOT/scripts/pushtodisplay.mjs}"
 if [ ! -f "$SCRIPT" ]; then
@@ -21,6 +27,10 @@ fi
 node "$SCRIPT" login
 ```
 
+Codex should show one approval prompt. Tell the user to approve it once. If
+escalation is rejected or denied, the fallback is to run the same helper from a
+normal terminal with network access.
+
 The helper uses the CLI bundled inside the plugin. Show the user the printed URL
 and code. Open the URL when possible. Never ask the user to paste credentials or
 tokens into the chat.
@@ -31,5 +41,5 @@ Verify with:
 node "$SCRIPT" status
 ```
 
-Report the auth and setup state in one sentence. The plugin re-probes auth on its
-own, so no restart is needed.
+Report the auth and setup state in one sentence, once. The plugin re-probes auth
+on its own, so no restart is needed.
