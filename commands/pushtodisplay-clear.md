@@ -4,23 +4,18 @@ description: Write a `log cleared` entry to the configured Push To Display panel
 
 # Push To Display clear
 
-Write one `log cleared` entry to the configured panel. Prefer the bundled helper
-if you can find it; otherwise use the CLI directly.
+Write one `log cleared` entry to the configured panel.
 
 ```bash
-SCRIPT="${PLUGIN_ROOT:-}"
+SCRIPT="${PLUGIN_ROOT:+$PLUGIN_ROOT/scripts/pushtodisplay.mjs}"
+if [ ! -f "$SCRIPT" ]; then
+  SCRIPT="$(find "${CODEX_HOME:-$HOME/.codex}/plugins" -path '*pushtodisplay*/scripts/pushtodisplay.mjs' -print 2>/dev/null | sort | tail -n 1)"
+fi
 if [ -z "$SCRIPT" ]; then
-  SCRIPT="$(find "${CODEX_HOME:-$HOME/.codex}/plugins" -path '*pushtodisplay*/scripts/pushtodisplay.mjs' -print -quit 2>/dev/null)"
+  echo "codex-pushtodisplay helper not found; reinstall the plugin." >&2
+  exit 1
 fi
-if [ -n "$SCRIPT" ] && [ -f "$SCRIPT" ]; then
-  node "$SCRIPT" clear
-else
-  if command -v pushtodisplay >/dev/null 2>&1; then
-    pushtodisplay send -p "${PUSHTODISPLAY_PANEL:-1}" "log cleared"
-  else
-    npx --yes pushtodisplay@0.1.19 send -p "${PUSHTODISPLAY_PANEL:-1}" "log cleared"
-  fi
-fi
+node "$SCRIPT" clear
 ```
 
 The panel is a scrolling history; clearing writes a marker and does not delete

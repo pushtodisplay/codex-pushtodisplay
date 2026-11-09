@@ -19,6 +19,7 @@ import { fileURLToPath } from "node:url";
 
 import { saveGlobalAuth } from "../lib/auth-gate.mjs";
 import {
+  PUSHTODISPLAY_CLI_VERSION,
   authStatus,
   cliNotFoundMessage,
   isAuthFailure,
@@ -29,6 +30,7 @@ import {
 } from "../lib/cli-adapter.mjs";
 import { agentLabel, cacheDir, clock, loadConfig } from "../lib/config.mjs";
 import { clearedMessage, testMessage } from "../lib/messages.mjs";
+import { isSetupComplete, markSetupComplete, setupPath } from "../lib/setup-state.mjs";
 
 const pluginRoot =
   process.env.PLUGIN_ROOT ||
@@ -95,9 +97,12 @@ async function status(argv) {
   const env = process.env;
   const config = loadConfig(env);
   const authed = await authStatus({ env, pluginRoot, timeoutMs: 10_000 });
+  const setup = isSetupComplete(env);
   const data = {
     cli: cliLabel(env),
     authenticated: authed,
+    setup,
+    setupFile: setupPath(env),
     boardId: config.boardId || null,
     panel: config.panel,
     label: agentLabel(config, process.cwd()),
@@ -114,7 +119,8 @@ async function status(argv) {
       "Push To Display — codex-pushtodisplay",
       `CLI:      ${data.cli}`,
       configLines(config),
-      `Auth:     ${authed ? "logged in" : "not logged in — run: node scripts/pushtodisplay.mjs login"}`,
+      `Auth:     ${authed ? "logged in" : "not logged in — run: node scripts/pushtodisplay.mjs setup"}`,
+      `Setup:    ${setup ? "complete" : "not complete — run: node scripts/pushtodisplay.mjs setup"}`,
     ].join("\n") + "\n",
   );
 }
@@ -163,13 +169,62 @@ async function login() {
   const authed = await authStatus({ pluginRoot, timeoutMs: 10_000 });
   if (authed) {
     saveGlobalAuth(true);
-    process.stdout.write("Logged in. Push To Display updates are enabled.\n");
+    if (isSetupComplete()) {
+      process.stdout.write("Logged in. Push To Display updates are enabled.\n");
+    } else {
+      process.stdout.write(
+        "Logged in. Next: run `node scripts/pushtodisplay.mjs setup` to finish this Codex integration.\n",
+      );
+    }
   } else {
     process.stderr.write(
       "The login flow finished but `auth status --json` still reports logged out.\n",
     );
     process.exitCode = 1;
   }
+}
+
+/**
+ * Full setup for this Codex integration: authenticate if needed, prove the
+ * board works with a test entry, then write the per-Codex setup marker.
+ */
+async function setup() {
+  const env = process.env;
+  const config = loadConfig(env);
+  let authed = await authStatus({ env, pluginRoot, timeoutMs: 10_000 });
+
+  if (!authed) {
+    process.stdout.write("Push To Display is not logged in. Starting device-code login…\n");
+    await login();
+    if (process.exitCode === 1) return;
+    authed = await authStatus({ env, pluginRoot, timeoutMs: 10_000 });
+    if (!authed) {
+      process.stderr.write("Login finished but auth is still not available.\n");
+      process.exitCode = 1;
+      return;
+    }
+  } else {
+    process.stdout.write("Push To Display is already authenticated.\n");
+  }
+
+  await sendTestOrClear("test");
+  if (process.exitCode === 1) return;
+
+  const record = markSetupComplete(
+    {
+      boardId: config.boardId,
+      panel: config.panel,
+      label: agentLabel(config, process.cwd()),
+      cliVersion: PUSHTODISPLAY_CLI_VERSION,
+    },
+    env,
+  );
+  process.stdout.write(
+    [
+      `Setup complete for Codex. Board: ${record.boardId || "default board"}, panel ${record.panel}.`,
+      "If you have not already, trust the pushtodisplay hooks in /hooks.",
+    ].join("\n") + "\n",
+  );
 }
 
 /**
@@ -209,8 +264,9 @@ function usage() {
       "Usage: node scripts/pushtodisplay.mjs <command> [--json]",
       "",
       "Commands:",
+      "  setup    Log in if needed, send a test entry, and mark Codex setup complete.",
       "  login    Start the OAuth device-code login (opens the browser when possible).",
-      "  status   Show the resolved CLI, board/panel/label, and auth state.",
+      "  status   Show the resolved CLI, board/panel/label, auth, and setup state.",
       "  test     Send a test entry to the configured panel.",
       "  clear    Write a `log cleared` entry to the configured panel.",
       "  help     Show this message.",
@@ -225,6 +281,9 @@ async function main() {
   const argv = process.argv.slice(2);
   const command = argv[0] ?? "help";
   switch (command) {
+    case "setup":
+      await setup();
+      break;
     case "login":
       await login();
       break;

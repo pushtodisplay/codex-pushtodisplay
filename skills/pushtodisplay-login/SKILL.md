@@ -1,33 +1,35 @@
 ---
 name: pushtodisplay-login
-description: Log in to Push To Display (OAuth device-code) so Codex activity can be mirrored to your board.
+description: Re-authenticate Push To Display (OAuth device-code) after an expired or revoked login.
 ---
 
 # Push To Display login
 
-Run the device-code login and show the user the URL and code it prints:
+Use this after setup is already complete and the account needs to log in again.
+On a fresh install, run the `setup` skill instead — login alone does not mark a
+new Codex integration as set up.
 
 ```bash
-if command -v pushtodisplay >/dev/null 2>&1; then
-  pushtodisplay auth login --device-code
-else
-  npx --yes pushtodisplay@0.1.19 auth login --device-code
+SCRIPT="${PLUGIN_ROOT:+$PLUGIN_ROOT/scripts/pushtodisplay.mjs}"
+if [ ! -f "$SCRIPT" ]; then
+  SCRIPT="$(find "${CODEX_HOME:-$HOME/.codex}/plugins" -path '*pushtodisplay*/scripts/pushtodisplay.mjs' -print 2>/dev/null | sort | tail -n 1)"
 fi
+if [ -z "$SCRIPT" ]; then
+  echo "codex-pushtodisplay helper not found; reinstall the plugin." >&2
+  exit 1
+fi
+node "$SCRIPT" login
 ```
 
-If the command prints a verification URL, open it for the user when possible and
-tell them to enter the printed code. Never ask the user to paste credentials or
+The helper uses the CLI bundled inside the plugin. Show the user the printed URL
+and code. Open the URL when possible. Never ask the user to paste credentials or
 tokens into the chat.
 
-When the command finishes, verify with:
+Verify with:
 
 ```bash
-if command -v pushtodisplay >/dev/null 2>&1; then
-  pushtodisplay auth status --json
-else
-  npx --yes pushtodisplay@0.1.19 auth status --json
-fi
+node "$SCRIPT" status
 ```
 
-Report the auth state in one sentence. The plugin re-probes auth on its own, so
-no restart is needed.
+Report the auth and setup state in one sentence. The plugin re-probes auth on its
+own, so no restart is needed.

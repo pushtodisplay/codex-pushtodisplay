@@ -15,6 +15,7 @@ import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { safeSessionId } from "../lib/session-state.mjs";
+import { markSetupComplete } from "../lib/setup-state.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 export const repoRoot = path.resolve(here, "..");
@@ -23,6 +24,7 @@ export const hookPath = path.join(repoRoot, "hooks", "hook.mjs");
 /**
  * @typedef {object} HarnessOpts
  * @property {boolean} [auth]
+ * @property {boolean} [setup]
  * @property {number} [intervalMs]
  * @property {Record<string, string>} [env]
  */
@@ -116,6 +118,8 @@ export function createHarness(opts = {}) {
     FAKE_PTD_AUTH: opts.auth === false ? "0" : "1",
     ...opts.env,
   };
+
+  if (opts.setup !== false) markSetupComplete({}, env);
 
   /**
    * @param {string} raw

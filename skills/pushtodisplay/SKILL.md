@@ -10,10 +10,10 @@ description: >-
 
 # Push To Display (codex-pushtodisplay)
 
-`codex-pushtodisplay` is a Codex plugin (hooks + commands + skill) that mirrors
-agent activity onto a **Push To Display** board (https://pushtodisplay.com) in
-real time. A panel is a **shared scrolling log**: one entry per event, newest at
-the top, and every entry has the same shape:
+`codex-pushtodisplay` is a Codex plugin (hooks + skills) that mirrors agent
+activity onto a **Push To Display** board (https://pushtodisplay.com) in real
+time. A panel is a **shared scrolling log**: one entry per event, newest at the
+top, and every entry has the same shape:
 
 ```
 <agent> <what happened> <STATUS> <HH:MM>
@@ -63,50 +63,36 @@ codex plugin marketplace add pushtodisplay/codex-pushtodisplay
 codex plugin add pushtodisplay@pushtodisplay
 ```
 
-For a local checkout:
+Then:
 
-```bash
-codex plugin marketplace add /path/to/codex-pushtodisplay
-codex plugin add pushtodisplay@pushtodisplay
-```
+1. Open `/hooks` and trust the bundled `pushtodisplay` hooks. A plugin update
+   that changes the hook script requires a new review.
+2. Run the `setup` skill. It logs in if needed, sends a test entry, and writes a
+   Codex-specific setup marker.
 
-Then open `/hooks` and trust the bundled `pushtodisplay` hooks. A plugin update
-that changes the hook script requires a new review.
+Installation alone sends nothing. A login from opencode, pi, or another
+integration on the same machine does not enable this plugin; the setup marker is
+required.
 
 ## Requirements
 
-- Node.js 18 or newer (the hook and helper are plain ESM; there is no build
-  step).
-- The `pushtodisplay` CLI: bundled if present in the plugin's `node_modules`,
-  otherwise a `pushtodisplay` binary on `PATH`, otherwise
-  `npx --yes pushtodisplay@0.1.19`. For reliable final lines (`Interrupt`,
-  `SessionEnd`), install it globally: `npm i -g pushtodisplay`.
-- An authenticated Push To Display account (`pushtodisplay auth login
-  --device-code`).
+- Codex CLI 0.167.x with plugin-bundled lifecycle hooks.
+- Node.js 18 or newer (plain ESM; no build step).
+- A Push To Display account.
+- No separate `pushtodisplay` CLI install. The plugin bundles the CLI it needs.
 
-## Commands
-
-Codex 0.167.x plugins bundle skills rather than shell-backed slash commands.
-The plugin ships four action skills plus a deterministic script:
+## Skills
 
 | Skill | Action |
 | --- | --- |
-| `pushtodisplay:pushtodisplay-login` | OAuth device-code login. |
-| `pushtodisplay:pushtodisplay-status` | Show auth and resolved configuration. |
+| `pushtodisplay:setup` | Log in if needed, send a test entry, and mark this Codex integration as set up. |
+| `pushtodisplay:pushtodisplay-status` | Show auth, setup, board, panel, and label. |
 | `pushtodisplay:pushtodisplay-test` | Send a test entry. |
 | `pushtodisplay:pushtodisplay-clear` | Write a `log cleared` entry. |
+| `pushtodisplay:pushtodisplay-login` | Re-authenticate after an expired or revoked login. |
 
-The same actions are available without the model:
-
-```bash
-node scripts/pushtodisplay.mjs login
-node scripts/pushtodisplay.mjs status
-node scripts/pushtodisplay.mjs test
-node scripts/pushtodisplay.mjs clear
-```
-
-`commands/*.md` is a legacy compatibility surface for clients that migrate
-legacy plugin commands; the portable plugin manifest does not expose them.
+`setup` is the supported entry point. The other skills are optional diagnostics
+or re-authentication helpers.
 
 ## Configuration (environment variables)
 
@@ -127,17 +113,16 @@ PUSHTODISPLAY_PANEL=2 PUSHTODISPLAY_LABEL=qa codex
 
 ## Troubleshooting
 
-- **No lines at all** — check `/hooks`: plugin hooks must be trusted. Also
-  check `PUSHTODISPLAY_DISABLED` and `PUSHTODISPLAY_LABEL`.
-- **Lines stop after a while** — auth is known-bad. Updates are dropped, not
-  buffered, until login; the hook re-probes every 20 seconds and login
-  re-enables sending immediately.
-- **CLI not found** — `npm i -g pushtodisplay`. The plugin falls back to
-  `npx --yes pushtodisplay@0.1.19`, which is slower and may exceed short final-event
-  timeouts.
+- **No lines at all** — check `/hooks`: plugin hooks must be trusted. Check
+  `PUSHTODISPLAY_DISABLED` and run the `setup` skill. A fresh install stays
+  silent until setup completes.
+- **Lines stop after a while** — auth is known-bad. Run the `setup` skill (or
+  the `pushtodisplay-login` skill if setup is already complete). Updates are
+  dropped, not buffered, until login; the hook re-probes every 20 seconds.
+- **Helper not found** — reinstall the plugin. The plugin bundles its own CLI;
+  do not install a separate one.
 - **Wrong panel** — `PUSHTODISPLAY_PANEL` must be 1–4; anything else falls back
-  to 1. `/pushtodisplay-status` (or the helper's `status`) shows the resolved
-  values.
+  to 1. The status skill shows the resolved values.
 - **Too noisy** — `PUSHTODISPLAY_STEPS=0` posts milestones only.
 
 ## Reference

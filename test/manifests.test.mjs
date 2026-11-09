@@ -212,13 +212,13 @@ test("package scripts and published files are release-ready", () => {
   }
 });
 
-test("README and release docs document both distribution paths and the directory blocker", () => {
+test("README and release docs document the simple install path and the directory blocker", () => {
   const readme = readText("README.md");
   for (const phrase of [
     "codex plugin marketplace add",
     "codex plugin add",
-    "npm",
-    "pushtodisplay@0.1.19",
+    "$pushtodisplay:setup",
+    "Installation alone does not send anything",
     "/hooks",
     "PUSHTODISPLAY_BOARD_ID",
     "PUSHTODISPLAY_PANEL",
@@ -233,6 +233,8 @@ test("README and release docs document both distribution paths and the directory
   ]) {
     assert.ok(readme.includes(phrase), `README should mention ${phrase}`);
   }
+  assert.equal(/npx\s+--yes\s+pushtodisplay/.test(readme), false);
+  assert.equal(/npm i -g pushtodisplay/.test(readme), false);
 
   const distribution = readText("docs/distribution.md");
   for (const phrase of [
@@ -255,6 +257,30 @@ test("README and release docs document both distribution paths and the directory
     "NPM_TOKEN",
   ]) {
     assert.ok(publishing.includes(phrase), `publishing docs should mention ${phrase}`);
+  }
+});
+
+test("user-facing skills and commands use the plugin helper, not a separate CLI", () => {
+  const files = [
+    "skills/setup/SKILL.md",
+    "skills/pushtodisplay-login/SKILL.md",
+    "skills/pushtodisplay-status/SKILL.md",
+    "skills/pushtodisplay-test/SKILL.md",
+    "skills/pushtodisplay-clear/SKILL.md",
+    "commands/pushtodisplay-login.md",
+    "commands/pushtodisplay-status.md",
+    "commands/pushtodisplay-test.md",
+    "commands/pushtodisplay-clear.md",
+  ];
+  for (const file of files) {
+    const text = readText(file);
+    assert.equal(/npx\s+--yes\s+pushtodisplay/.test(text), false, `${file} must not use npx`);
+    assert.equal(
+      /^\s*pushtodisplay\s+(auth|send)\b/m.test(text),
+      false,
+      `${file} must not invoke the CLI directly`,
+    );
+    assert.ok(text.includes("scripts/pushtodisplay.mjs"), `${file} should use the plugin helper`);
   }
 });
 

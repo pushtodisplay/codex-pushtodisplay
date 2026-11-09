@@ -1,31 +1,30 @@
 ---
-description: Show whether codex-pushtodisplay is authenticated and where it is configured to send.
+description: Show whether codex-pushtodisplay is authenticated, set up, and where it is configured to send.
 ---
 
 # Push To Display status
 
-Report the resolved configuration and auth state without changing anything.
-
-Configuration comes from the environment:
-
-```bash
-env | grep '^PUSHTODISPLAY_' | sort
-```
-
-Auth comes from the `pushtodisplay` CLI:
+Report the resolved configuration, auth, and setup state without changing
+anything.
 
 ```bash
-if command -v pushtodisplay >/dev/null 2>&1; then
-  pushtodisplay auth status --json
-else
-  npx --yes pushtodisplay@0.1.19 auth status --json
+SCRIPT="${PLUGIN_ROOT:+$PLUGIN_ROOT/scripts/pushtodisplay.mjs}"
+if [ ! -f "$SCRIPT" ]; then
+  SCRIPT="$(find "${CODEX_HOME:-$HOME/.codex}/plugins" -path '*pushtodisplay*/scripts/pushtodisplay.mjs' -print 2>/dev/null | sort | tail -n 1)"
 fi
+if [ -z "$SCRIPT" ]; then
+  echo "codex-pushtodisplay helper not found; reinstall the plugin." >&2
+  exit 1
+fi
+node "$SCRIPT" status
 ```
 
-Summarize in four short lines:
+Summarize in five short lines:
 
-- **Auth**: logged in or not; if not, tell the user to run the
-  `pushtodisplay-login` command.
-- **Board**: `PUSHTODISPLAY_BOARD_ID` or "default board".
+- **Auth**: logged in or not; if not, run `setup`.
+- **Setup**: complete or not; if not, run `setup`.
+- **Board**: `PUSHTODISPLAY_BOARD_ID` or “default board”.
 - **Panel**: `PUSHTODISPLAY_PANEL` (1–4, default 1).
 - **Label**: `PUSHTODISPLAY_LABEL` or the workspace folder basename.
+
+The plugin bundles its own CLI; do not suggest installing a separate one.

@@ -6,6 +6,7 @@ import { existsSync, readFileSync } from "node:fs";
 import * as path from "node:path";
 import test from "node:test";
 
+import { isSetupComplete } from "../lib/setup-state.mjs";
 import { createHarness, repoRoot } from "./helpers.mjs";
 
 const script = path.join(repoRoot, "scripts", "pushtodisplay.mjs");
@@ -50,6 +51,8 @@ test("status reports the resolved CLI, config, and auth state", async () => {
     assert.equal(result.code, 0);
     const status = JSON.parse(result.stdout);
     assert.equal(status.authenticated, false);
+    assert.equal(status.setup, true);
+    assert.ok(status.setupFile.endsWith("setup.json"));
     assert.equal(status.panel, 2);
     assert.equal(status.label, "ci");
     assert.equal(status.boardId, "board-9");
@@ -58,6 +61,35 @@ test("status reports the resolved CLI, config, and auth state", async () => {
     assert.ok(status.cli.includes("pushtodisplay"));
     assert.ok(status.cli.includes("env"));
     assert.ok(status.cacheDir);
+  } finally {
+    harness.cleanup();
+  }
+});
+
+test("setup sends a test entry and writes the Codex setup marker", async () => {
+  const harness = createHarness({ setup: false });
+  try {
+    const result = await runScript(harness, ["setup"], {
+      PUSHTODISPLAY_PANEL: "2",
+      PUSHTODISPLAY_LABEL: "ci",
+      PUSHTODISPLAY_BOARD_ID: "board-9",
+    });
+    assert.equal(result.code, 0);
+    assert.match(result.stdout, /Setup complete for Codex/);
+    assert.equal(harness.entries().length, 1);
+    assert.match(harness.entries()[0]?.text ?? "", /^ci link OK, panel 2 OK \d{2}:\d{2}$/);
+    assert.equal(isSetupComplete(harness.env), true);
+  } finally {
+    harness.cleanup();
+  }
+});
+
+test("setup does not mark completion when login still fails", async () => {
+  const harness = createHarness({ setup: false, auth: false });
+  try {
+    const result = await runScript(harness, ["setup"], { FAKE_PTD_AUTH: "0" });
+    assert.equal(result.code, 1);
+    assert.equal(isSetupComplete(harness.env), false);
   } finally {
     harness.cleanup();
   }

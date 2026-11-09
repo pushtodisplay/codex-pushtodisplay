@@ -63,70 +63,11 @@ tools") because a counter answers a question nobody asked.
 
 ## Install
 
-There are two supported distribution paths: the **repository marketplace** and
-**npm**. The public OpenAI Plugins Directory is not available because it rejects
-plugin packages that contain lifecycle hooks; this plugin is hooks-based. See
-[docs/distribution.md](docs/distribution.md) for the full explanation.
-
 ### From the repository marketplace
 
 ```bash
 codex plugin marketplace add pushtodisplay/codex-pushtodisplay
 codex plugin add pushtodisplay@pushtodisplay
-```
-
-### From npm
-
-The npm package is `codex-pushtodisplay`. It vendors the pinned `pushtodisplay`
-CLI 0.1.19, so an npm-source install carries its own CLI. Add a personal
-marketplace entry with an npm source, then install:
-
-```bash
-mkdir -p ~/.agents/plugins
-cat > ~/.agents/plugins/marketplace.json <<'JSON'
-{
-  "name": "pushtodisplay-npm",
-  "interface": { "displayName": "Push To Display (npm)" },
-  "plugins": [
-    {
-      "name": "pushtodisplay",
-      "source": {
-        "source": "npm",
-        "package": "codex-pushtodisplay",
-        "version": "0.1.1"
-      },
-      "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
-      "category": "Productivity"
-    }
-  ]
-}
-JSON
-codex plugin add pushtodisplay@pushtodisplay-npm
-```
-
-If `~/.agents/plugins/marketplace.json` already exists, merge the plugin entry
-into its `plugins` array instead of replacing the file. Codex reads the personal
-marketplace automatically; `codex plugin marketplace list` shows what it sees.
-
-### From a local checkout
-
-```bash
-git clone https://github.com/pushtodisplay/codex-pushtodisplay.git
-cd codex-pushtodisplay
-npm ci
-codex plugin marketplace add "$PWD"
-codex plugin add pushtodisplay@pushtodisplay
-```
-
-The plugin vendors the pinned `pushtodisplay` CLI, so `npm ci` is only needed
-for development. The hook resolves the vendored copy first; a binary on `PATH`
-and the pinned npx fallback remain available.
-
-Inspect the result:
-
-```bash
-codex plugin marketplace list
-codex plugin list
 ```
 
 ### Trust the hooks
@@ -144,88 +85,55 @@ hook definition itself is unchanged. For one-off automation that already vets
 hook sources outside Codex, `--dangerously-bypass-hook-trust` skips the trust
 prompt for that invocation.
 
+### Finish setup
+
+Run the setup skill in Codex:
+
+```text
+$pushtodisplay:setup
+```
+
+It logs you in if needed, sends a test entry, and records that this Codex
+integration is set up. The plugin includes its own Push To Display CLI; do not
+install a separate CLI. Installation alone does not send anything: a login from
+another integration on the same machine does not enable Codex until this setup
+step runs.
+
+If the skill picker does not show it, ask Codex to “set up Push To Display” or
+invoke `$pushtodisplay:setup` directly.
+
 ### Requirements
 
-- **Codex CLI 0.167.x** (hooks, including plugin-bundled hooks).
+- **Codex CLI 0.167.x** — plugin-bundled lifecycle hooks.
 - **Node.js 18+** — the hook is plain ESM with no build step.
-- **The `pushtodisplay` CLI.** Resolution order:
-  1. the vendored `vendor/pushtodisplay` CLI (or an installed
-     `node_modules/pushtodisplay` dependency);
-  2. a `pushtodisplay` binary on `PATH`;
-  3. `npx --yes pushtodisplay@0.1.19`.
-- **A Push To Display account**, authenticated through the CLI.
-
-The repository-marketplace and npm installs both carry the vendored CLI, so a
-separate global install is optional. Set `PUSHTODISPLAY_CLI` to an absolute path
-to use a different CLI build. For a global install:
-
-```bash
-npm i -g pushtodisplay@0.1.19
-pushtodisplay auth login --device-code
-```
+- **A Push To Display account** — the setup skill opens the device-code login.
+- **No separate CLI install** — the plugin bundles the CLI it needs.
 
 ## Quick start
 
-1. **Log in** (device-code OAuth; opens the browser when possible):
+1. Install from the repository marketplace.
+2. Open `/hooks` and trust the `pushtodisplay` hooks.
+3. Run `$pushtodisplay:setup`.
+4. Start a new Codex session.
 
-   ```bash
-   node scripts/pushtodisplay.mjs login
-   ```
+The board shows the session opening, what it is working on, each finished tool
+step, approvals that need you, errors, and when it ends.
 
-   Or use the CLI directly:
+## Skills
 
-   ```bash
-   pushtodisplay auth login --device-code
-   ```
-
-2. **Verify the wiring** — sends a test entry to the configured panel and board:
-
-   ```bash
-   node scripts/pushtodisplay.mjs test
-   ```
-
-3. **Check auth and configuration**:
-
-   ```bash
-   node scripts/pushtodisplay.mjs status
-   ```
-
-Then start a new Codex session. The board shows it opening, what it is working
-on, each finished tool step, approvals that need you, errors, and when it ends.
-
-## Commands
-
-Codex 0.167.x plugins bundle **skills**, not shell-backed slash commands. The
-stable command surface is therefore a script, and the plugin also exposes each
-action as a skill so it appears in the skill/slash picker and can be invoked as
-a skill mention on surfaces that support one. In Codex 0.167 the installed
-skills are namespaced:
+Codex 0.167.x exposes plugin actions as skills. The setup skill is the only
+required one:
 
 | Skill | Action |
 | --- | --- |
-| `pushtodisplay:pushtodisplay-login` | OAuth device-code login. |
-| `pushtodisplay:pushtodisplay-status` | Show auth and resolved configuration. |
-| `pushtodisplay:pushtodisplay-test` | Send a test entry. |
-| `pushtodisplay:pushtodisplay-clear` | Write a `log cleared` entry. |
+| `$pushtodisplay:setup` | Log in if needed, send a test entry, and mark this Codex integration as set up. |
+| `$pushtodisplay:pushtodisplay-status` | Show auth, setup, board, panel, and label. |
+| `$pushtodisplay:pushtodisplay-test` | Send a test entry. |
+| `$pushtodisplay:pushtodisplay-clear` | Write a `log cleared` entry. |
 
-They are also discoverable in the skill list as `pushtodisplay-login`,
-`pushtodisplay-status`, `pushtodisplay-test`, and `pushtodisplay-clear`.
-
-The deterministic, model-free path is the bundled helper:
-
-| Command | Description |
-| --- | --- |
-| `node scripts/pushtodisplay.mjs login` | Start OAuth login (opens browser, shows code). |
-| `node scripts/pushtodisplay.mjs status` | Show current auth state, CLI, board, panel, label. |
-| `node scripts/pushtodisplay.mjs test` | Send a test update to verify wiring. |
-| `node scripts/pushtodisplay.mjs clear` | Write a `log cleared` entry to this panel. |
-
-Run the script from the installed plugin directory, or use the CLI commands
-directly (`pushtodisplay auth status --json`, `pushtodisplay send ...`).
-
-> **Legacy note:** `commands/*.md` is included for Codex-compatible installs,
-> which expose them as `source-command-*` skills. The skills above and the script
-> are the stable surface.
+`setup` is the supported entry point. `status`, `test`, and `clear` are optional
+diagnostics. The plugin includes the CLI it needs; users do not install or invoke
+a separate `pushtodisplay` CLI.
 
 ## Configuration
 
@@ -333,32 +241,29 @@ cannot be distinguished from success by the hook contract and is posted `OK`.
 1. Open `/hooks` and confirm the `pushtodisplay` hook is trusted. A new or
    changed plugin is skipped until reviewed.
 2. Check `PUSHTODISPLAY_DISABLED` is not `1`.
-3. Run `node scripts/pushtodisplay.mjs status` (or `pushtodisplay auth status
-   --json`). Log in if needed.
-4. Run `node scripts/pushtodisplay.mjs test` and look for the `link OK` line.
-5. Check that the board/panel in status is the one you are watching.
+3. Run `$pushtodisplay:setup`. A fresh install sends nothing until this setup
+   step has completed, even if another integration already logged in.
+4. Run `$pushtodisplay:pushtodisplay-status` and check the resolved board,
+   panel, auth, and setup state.
+5. Run `$pushtodisplay:pushtodisplay-test` and look for the `link OK` line.
 
 **Updates stop after working for a while.**
 
-Auth is known-bad and the plugin drops rather than buffers. Run the login
-command. Sending resumes on the next event; the plugin re-probes at most every
-20 seconds and a successful login re-enables it immediately.
+Auth is known-bad and the plugin drops rather than buffers. Run
+`$pushtodisplay:setup` (or `$pushtodisplay:pushtodisplay-login` if setup is
+already complete). Sending resumes on the next event; the plugin re-probes at
+most every 20 seconds and a successful login re-enables it immediately.
 
 **`Push To Display CLI not found`.**
 
-The hook falls back to `npx --yes pushtodisplay@0.1.19`, which can be slow enough to
-miss the three-second `Interrupt`/`SessionEnd` budget. Install it globally:
-
-```bash
-npm i -g pushtodisplay
-```
+The plugin bundles its own CLI. If it is missing, the plugin files are
+incomplete; reinstall the plugin. Do not install a separate `pushtodisplay` CLI.
 
 **Final lines (`STOP`, `ENDED`) are missing.**
 
-`Interrupt` and `SessionEnd` are allowed at most three seconds by Codex. A cold
-`npx` download, a slow network, or a known-bad auth probe can consume that
-budget. Install the CLI globally and log in; the hook leaves unsent queue
-entries for the next event when it runs out of time.
+`Interrupt` and `SessionEnd` are allowed at most three seconds by Codex. A slow
+network or a known-bad auth probe can consume that budget. The hook leaves
+unsent queue entries for the next event; run setup/status if it persists.
 
 **Too noisy.**
 
@@ -405,22 +310,23 @@ build step and no generated `dist/`.
 | `lib/auth-gate.mjs` | Unknown / authed / known-bad, lazy retry, login hint. |
 | `lib/cli-adapter.mjs` | CLI resolution, argv mapping, auth probe. |
 | `lib/session-state.mjs` | Per-session state, atomic writes, lock. |
-| `lib/sender.mjs` | Apply an event, gate auth, drain the queue. |
+| `lib/sender.mjs` | Apply an event, require setup + auth, drain the queue. |
 | `lib/hook-events.mjs` | Codex hook event -> message mapping. |
-| `scripts/pushtodisplay.mjs` | Operator CLI: login/status/test/clear. |
+| `lib/setup-state.mjs` | Per-Codex setup marker; prevents shared credentials from silently enabling Codex. |
+| `scripts/pushtodisplay.mjs` | Internal setup/status helper used by the skills. |
 | `vendor/pushtodisplay/` | Pinned `pushtodisplay` CLI 0.1.19; no install step needed. |
 | `skills/`, `commands/` | Usage guidance and command skills. |
-| `docs/distribution.md` | Repo marketplace, npm, and the public-directory blocker. |
+| `docs/distribution.md` | Alternative npm/developer paths and the public-directory blocker. |
 | `docs/publishing.md` | First publish and ongoing release steps. |
 | `.github/workflows/publish.yml` | OIDC/Trusted Publishing release workflow. |
 
 ### Validating the plugin
 
 ```bash
-npx @openai/codex --version
-npx @openai/codex plugin marketplace add "$PWD"
-npx @openai/codex plugin list
-npx @openai/codex plugin add pushtodisplay@pushtodisplay
+codex --version
+codex plugin marketplace add "$PWD"
+codex plugin list
+codex plugin add pushtodisplay@pushtodisplay
 ```
 
 To inspect hook discovery without touching your real Codex home, use an isolated

@@ -6,6 +6,7 @@ import * as path from "node:path";
 import test from "node:test";
 
 import { SURFACE } from "../lib/payloads.mjs";
+import { markSetupComplete } from "../lib/setup-state.mjs";
 import { createHarness, fixture } from "./helpers.mjs";
 
 /** @param {string} text */
@@ -18,6 +19,24 @@ const opened = (text) => /^demo session opened READY \d{2}:\d{2}$/.test(text);
 function stateFile(harness, sessionId) {
   return path.join(harness.cache, `${sessionId}.json`);
 }
+
+test("valid auth is not enough: a fresh install stays silent until setup completes", async () => {
+  const harness = createHarness({ setup: false });
+  try {
+    const result = await harness.run(fixture("session-start"));
+    assert.equal(result.code, 0);
+    assert.equal(result.stdout, "");
+    assert.equal(harness.entries().length, 0);
+    assert.equal(harness.stateExists("sess-startup"), false);
+
+    markSetupComplete({ panel: 1 }, harness.env);
+    await harness.run(fixture("session-start"));
+    assert.equal(harness.entries().length, 1);
+    assert.ok(opened(harness.entries()[0]?.text ?? ""));
+  } finally {
+    harness.cleanup();
+  }
+});
 
 test("SessionStart posts one READY line for startup, resume, clear, and fork", async () => {
   const harness = createHarness();
