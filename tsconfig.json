@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2022"],
+    "types": ["node"],
+    "strict": true,
+    "noImplicitAny": false,
+    "noEmit": true,
+    "allowJs": true,
+    "checkJs": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true
+  },
+  "include": [
+    "hooks/**/*.mjs",
+    "lib/**/*.mjs",
+    "scripts/**/*.mjs",
+    "test/**/*.mjs",
+    "eslint.config.mjs"
+  ],
+  "exclude": ["node_modules", "coverage", "fixtures"]
+}

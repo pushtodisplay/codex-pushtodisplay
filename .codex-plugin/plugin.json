@@ -1,0 +1,47 @@
+{
+  "name": "pushtodisplay",
+  "version": "0.1.0",
+  "description": "Mirror Codex CLI activity onto your Push To Display board as a shared, human-readable log.",
+  "author": {
+    "name": "Goban Source LLC",
+    "email": "hello@pushtodisplay.com",
+    "url": "https://pushtodisplay.com"
+  },
+  "homepage": "https://pushtodisplay.com",
+  "repository": "https://github.com/pushtodisplay/codex-pushtodisplay",
+  "license": "MIT",
+  "keywords": [
+    "codex",
+    "codex-plugin",
+    "pushtodisplay",
+    "push-to-display",
+    "display",
+    "signage",
+    "dashboard",
+    "status-board",
+    "hooks",
+    "real-time"
+  ],
+  "skills": "./skills/",
+  "hooks": "./hooks/hooks.json",
+  "interface": {
+    "displayName": "Push To Display",
+    "shortDescription": "Codex activity on your board",
+    "longDescription": "Mirror Codex CLI sessions onto a Push To Display board as a shared, human-readable log: session lifecycle, prompts, tool calls, permission requests, results, subagents, and interruptions.",
+    "developerName": "Goban Source LLC",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Read session activity",
+      "Write board messages"
+    ],
+    "websiteURL": "https://pushtodisplay.com",
+    "supportURL": "https://github.com/pushtodisplay/codex-pushtodisplay/issues",
+    "privacyPolicyURL": "https://pushtodisplay.com/privacy",
+    "termsOfServiceURL": "https://pushtodisplay.com/terms",
+    "defaultPrompt": [
+      "Show my Codex activity on Push To Display.",
+      "Set up Push To Display for this Codex session."
+    ],
+    "brandColor": "#5ec8d4"
+  }
+}

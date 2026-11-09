@@ -1,0 +1,67 @@
+{
+  "name": "codex-pushtodisplay",
+  "version": "0.1.0",
+  "description": "Mirror Codex CLI activity onto your Push To Display board as a shared, human-readable log",
+  "type": "module",
+  "keywords": [
+    "codex",
+    "codex-cli",
+    "codex-plugin",
+    "pushtodisplay",
+    "push-to-display",
+    "display",
+    "signage",
+    "dashboard",
+    "status-board",
+    "hooks",
+    "real-time"
+  ],
+  "license": "MIT",
+  "author": {
+    "name": "Goban Source LLC",
+    "email": "hello@pushtodisplay.com",
+    "url": "https://pushtodisplay.com"
+  },
+  "homepage": "https://pushtodisplay.com",
+  "bugs": {
+    "url": "https://github.com/pushtodisplay/codex-pushtodisplay/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pushtodisplay/codex-pushtodisplay.git"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "bin": {
+    "pushtodisplay-codex": "./scripts/command.mjs"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "node --test",
+    "check": "npm run typecheck && npm run lint && npm test",
+    "prepublishOnly": "npm run check"
+  },
+  "files": [
+    ".agents",
+    ".codex-plugin",
+    "hooks",
+    "lib",
+    "scripts",
+    "skills",
+    "docs",
+    "README.md",
+    "LICENSE"
+  ],
+  "dependencies": {
+    "pushtodisplay": "^0.1.15"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "@types/node": "^22.15.3",
+    "eslint": "^9.25.1",
+    "globals": "^16.0.0",
+    "typescript": "~5.7.3"
+  }
+}
