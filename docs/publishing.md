@@ -49,6 +49,12 @@ npm publish --access public
 npm view codex-pushtodisplay@0.1.0 version dist.tarball
 ```
 
+If npm returns `EOTP`, the account or token requires a one-time password. A
+2FA-required token cannot publish from CI. Complete the first publish
+interactively with an OTP, create a granular automation token that is allowed to
+bypass 2FA, or configure Trusted Publishing before using the workflow. Never put
+an OTP or token in the repository.
+
 Then test a real install from the registry:
 
 ```bash
@@ -56,7 +62,8 @@ tmp="$(mktemp -d)"
 cd "$tmp"
 npm init -y >/dev/null
 npm install codex-pushtodisplay@0.1.0
-node -e 'console.log(require.resolve("pushtodisplay/package.json"))'
+test -f node_modules/codex-pushtodisplay/vendor/pushtodisplay/dist/cli.js
+echo "vendored CLI present"
 ```
 
 Also install through Codex's npm source using the personal marketplace entry in
@@ -85,6 +92,12 @@ If Trusted Publishing is not available for the account, create a granular npm
 automation token and add it as the repository secret `NPM_TOKEN`. The publish
 workflow reads that secret when present. Never commit a token or print it in
 logs or chat.
+
+A normal publish token that still requires a one-time password will fail in CI
+with `EOTP`; CI cannot answer the OTP prompt. Use an automation token that
+bypasses 2FA, or configure Trusted Publishing and let OIDC authenticate the
+workflow. A first publish from a local terminal can prompt for the OTP, but the
+published artifact then has no provenance statement.
 
 ## Ongoing releases
 

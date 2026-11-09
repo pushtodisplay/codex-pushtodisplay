@@ -46,9 +46,9 @@ current definition is reviewed:
 
 ## npm install
 
-The published package is `codex-pushtodisplay`. It vendors the pinned
-`pushtodisplay` CLI 0.1.19, so Codex's npm source (`npm pack --ignore-scripts`)
-carries the CLI with the plugin. No separate global CLI install is required.
+The npm package is `codex-pushtodisplay`. It vendors the pinned `pushtodisplay`
+CLI 0.1.19, so Codex's npm source (`npm pack --ignore-scripts`) carries the CLI
+with the plugin. No separate global CLI install is required.
 
 Add a personal marketplace entry with an npm source:
 

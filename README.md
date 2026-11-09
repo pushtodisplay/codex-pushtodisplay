@@ -77,9 +77,9 @@ codex plugin add pushtodisplay@pushtodisplay
 
 ### From npm
 
-The published package is `codex-pushtodisplay`. It vendors the pinned
-`pushtodisplay` CLI 0.1.19, so an npm-source install carries its own CLI. Add a
-personal marketplace entry with an npm source, then install:
+The npm package is `codex-pushtodisplay`. It vendors the pinned `pushtodisplay`
+CLI 0.1.19, so an npm-source install carries its own CLI. Add a personal
+marketplace entry with an npm source, then install:
 
 ```bash
 mkdir -p ~/.agents/plugins
