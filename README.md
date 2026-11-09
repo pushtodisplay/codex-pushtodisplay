@@ -93,7 +93,7 @@ cat > ~/.agents/plugins/marketplace.json <<'JSON'
       "source": {
         "source": "npm",
         "package": "codex-pushtodisplay",
-        "version": "0.1.0"
+        "version": "0.1.1"
       },
       "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
       "category": "Productivity"

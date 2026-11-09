@@ -46,7 +46,7 @@ test("root plugin.json is a Codex manifest with identity and components", () => 
   const plugin = readJson("plugin.json");
   assert.equal(plugin.name, "pushtodisplay");
   assert.match(plugin.name, /^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$/);
-  assert.equal(plugin.version, "0.1.0");
+  assert.equal(plugin.version, readJson("package.json").version);
   assert.ok(plugin.description.length > 20);
   assert.equal(plugin.author.name, "Goban Source LLC");
   assert.equal(plugin.homepage, "https://pushtodisplay.com");

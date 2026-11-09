@@ -26,7 +26,10 @@ broken manifest, hook wiring, lint, typecheck, or test fails the publish.
    configured on the package settings page, so it can only be enabled after the
    first version exists.
 
-## First publish (0.1.0)
+## First publish (0.1.0, completed)
+
+`0.1.0` is already published. This section is kept as the bootstrap record; use
+the ongoing release steps below for later versions.
 
 From a clean checkout:
 
