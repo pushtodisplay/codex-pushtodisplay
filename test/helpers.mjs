@@ -69,6 +69,10 @@ const fs = require("node:fs");
 const args = process.argv.slice(2);
 const authed = (process.env.FAKE_PTD_AUTH ?? "1") === "1";
 if (args[0] === "auth" && args[1] === "status") {
+  if (process.env.FAKE_PTD_AUTH_MODE === "unavailable") {
+    process.stderr.write("Error: getaddrinfo ENOTFOUND idp.pushtodisplay.com\\n");
+    process.exit(7);
+  }
   process.stdout.write(JSON.stringify({ authenticated: authed, method: authed ? "oauth" : null }) + "\\n");
   process.exit(0);
 }

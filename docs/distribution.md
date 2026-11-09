@@ -21,11 +21,26 @@ Then:
 1. Open `/hooks` in the Codex CLI (or **Settings > Hooks** in the desktop app).
 2. Review the `pushtodisplay` hook source.
 3. Trust the current definition.
-4. Run the `setup` skill in Codex: `$pushtodisplay:setup`.
+4. Run the setup helper from a normal terminal (same user account):
 
-The setup skill logs in if needed, sends a test entry, and writes a Codex-specific
+   ```bash
+   SCRIPT="$(find "${CODEX_HOME:-$HOME/.codex}/plugins" -path '*pushtodisplay*/scripts/pushtodisplay.mjs' -print 2>/dev/null | sort | tail -n 1)"
+   if [ -z "$SCRIPT" ]; then
+     echo "codex-pushtodisplay plugin not found; reinstall it." >&2
+     exit 1
+   fi
+   node "$SCRIPT" setup
+   ```
+
+The helper logs in if needed, sends a test entry, and writes a Codex-specific
 setup marker. Installation alone sends nothing. A shared login from opencode, pi,
 or another integration does not enable this plugin until Codex setup completes.
+
+Setup needs host credentials and network, so a model shell inside Codex's
+sandbox is not a reliable place to run it. If a one-time escalated command is
+available, approve that once instead; if it is denied, use the terminal. `status`
+inside Codex may say `Auth: not checked here (sandbox/network/keychain)`; that is
+not a logout, and the setup marker still governs whether hooks run.
 
 Inspect the install if needed:
 
@@ -54,7 +69,7 @@ cat > ~/.agents/plugins/marketplace.json <<'JSON'
       "source": {
         "source": "npm",
         "package": "codex-pushtodisplay",
-        "version": "0.1.5"
+        "version": "0.2.0"
       },
       "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
       "category": "Productivity"
@@ -69,8 +84,8 @@ If `~/.agents/plugins/marketplace.json` already exists, merge the plugin entry
 into its `plugins` array instead of replacing the file. Codex reads the personal
 marketplace automatically.
 
-After installing, trust the hooks and run `$pushtodisplay:setup` exactly as in
-the repository-marketplace path.
+After installing, trust the hooks and run the host-side setup helper exactly as
+in the repository-marketplace path.
 
 To verify the package directly, install it in a temporary directory:
 
@@ -78,7 +93,7 @@ To verify the package directly, install it in a temporary directory:
 tmp="$(mktemp -d)"
 cd "$tmp"
 npm init -y >/dev/null
-npm install codex-pushtodisplay@0.1.5
+npm install codex-pushtodisplay@0.2.0
 test -f node_modules/codex-pushtodisplay/vendor/pushtodisplay/dist/cli.js
 echo "vendored CLI present"
 ```

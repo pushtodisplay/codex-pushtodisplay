@@ -7,6 +7,7 @@ import test from "node:test";
 
 import {
   PUSHTODISPLAY_CLI_VERSION,
+  authCheck,
   authStatus,
   findOnPath,
   isAuthFailure,
@@ -132,7 +133,7 @@ test("findOnPath locates an executable and rejects a missing one", () => {
   }
 });
 
-test("authStatus reads the JSON contract", async () => {
+test("authCheck reads the JSON contract as a tri-state", async () => {
   const authed = fakeCli(
     'process.stdout.write(JSON.stringify({authenticated:true,method:"oauth"})+"\\n");',
   );
@@ -141,11 +142,23 @@ test("authStatus reads the JSON contract", async () => {
   );
   const root = emptyRoot();
   try {
-    await assert.doesNotReject(
-      authStatus({ env: { PATH: authed.root }, pluginRoot: root.root, cwd: root.root }).then(
-        (value) => assert.equal(value, true),
-      ),
+    const authedCheck = await authCheck({
+      env: { PATH: authed.root },
+      pluginRoot: root.root,
+      cwd: root.root,
+    });
+    assert.deepEqual(authedCheck, { state: "authenticated", reason: null });
+    assert.equal(
+      await authStatus({ env: { PATH: authed.root }, pluginRoot: root.root, cwd: root.root }),
+      true,
     );
+
+    const deniedCheck = await authCheck({
+      env: { PATH: denied.root },
+      pluginRoot: root.root,
+      cwd: root.root,
+    });
+    assert.deepEqual(deniedCheck, { state: "unauthenticated", reason: null });
     assert.equal(
       await authStatus({ env: { PATH: denied.root }, pluginRoot: root.root, cwd: root.root }),
       false,
@@ -157,11 +170,37 @@ test("authStatus reads the JSON contract", async () => {
   }
 });
 
-test("authStatus falls back to legacy text and treats a missing CLI as denied", async () => {
+test("a failed probe or missing CLI is unavailable, never logged out", async () => {
+  const network = fakeCli('process.stderr.write("Error: getaddrinfo ENOTFOUND idp\\n");', 7);
+  const root = emptyRoot();
+  try {
+    const networkCheck = await authCheck({
+      env: { PATH: network.root },
+      pluginRoot: root.root,
+      cwd: root.root,
+    });
+    assert.equal(networkCheck.state, "unavailable");
+    assert.ok(networkCheck.reason);
+
+    const missingCheck = await authCheck({
+      env: { PATH: "" },
+      pluginRoot: root.root,
+      cwd: root.root,
+    });
+    assert.equal(missingCheck.state, "unavailable");
+    assert.ok(missingCheck.reason);
+  } finally {
+    network.cleanup();
+    root.cleanup();
+  }
+});
+
+test("authStatus falls back to legacy text and treats unreadable output as unavailable", async () => {
   const legacyOk = fakeCli(
     'process.stdout.write("Auth method: OAuth (JWT)\\nAll commands available (send, boards, devices).\\n");',
   );
   const legacyDenied = fakeCli('process.stdout.write("Not authenticated. Run auth login.\\n");');
+  const unknown = fakeCli('process.stdout.write("something new\\n");');
   const root = emptyRoot();
   try {
     assert.equal(
@@ -173,12 +212,18 @@ test("authStatus falls back to legacy text and treats a missing CLI as denied", 
       false,
     );
     assert.equal(
-      await authStatus({ env: { PATH: "" }, pluginRoot: root.root, cwd: root.root }),
-      false,
+      (await authCheck({ env: { PATH: unknown.root }, pluginRoot: root.root, cwd: root.root }))
+        .state,
+      "unavailable",
+    );
+    assert.equal(
+      (await authCheck({ env: { PATH: "" }, pluginRoot: root.root, cwd: root.root })).state,
+      "unavailable",
     );
   } finally {
     legacyOk.cleanup();
     legacyDenied.cleanup();
+    unknown.cleanup();
     root.cleanup();
   }
 });

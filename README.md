@@ -87,22 +87,45 @@ prompt for that invocation.
 
 ### Finish setup
 
-Run the setup skill in Codex:
+Setup is a **host-side action**: it needs the OS credential store and access to
+`idp.pushtodisplay.com` and `api.pushtodisplay.com`. Run it in a normal terminal
+with the same user account that runs Codex:
 
-```text
-$pushtodisplay:setup
+```bash
+SCRIPT="$(find "${CODEX_HOME:-$HOME/.codex}/plugins" -path '*pushtodisplay*/scripts/pushtodisplay.mjs' -print 2>/dev/null | sort | tail -n 1)"
+if [ -z "$SCRIPT" ]; then
+  echo "codex-pushtodisplay plugin not found; reinstall it." >&2
+  exit 1
+fi
+node "$SCRIPT" setup
 ```
 
-It logs you in if needed, sends a test entry, and records that this Codex
-integration is set up. Codex may ask you to approve network access for this one
-command; approve it once so setup can reach `idp.pushtodisplay.com` and
-`api.pushtodisplay.com`. The plugin includes its own Push To Display CLI; do not
-install a separate CLI. Installation alone does not send anything: a login from
-another integration on the same machine does not enable Codex until this setup
-step runs.
+It logs you in if needed, sends one test entry, and records that this Codex
+integration is set up. The helper prints one final outcome. If your client
+offers a one-time escalated command, you can approve that once instead of
+leaving Codex. If escalation is denied, use the normal terminal — do not retry
+inside the sandbox.
 
-If the skill picker does not show it, ask Codex to “set up Push To Display” or
-invoke `$pushtodisplay:setup` directly.
+The plugin includes its own Push To Display CLI; do not install a separate CLI.
+Installation alone does not send anything: a login from another integration on
+the same machine does not enable Codex until this setup step runs.
+
+You can also invoke `$pushtodisplay:setup` in Codex; the skill explains the
+host-side step and does not pretend a sandboxed retry succeeded.
+
+#### Setup vs. status inside Codex
+
+The status helper runs as a model shell command, inside Codex's sandbox. It can
+read the setup marker, but it may not be able to read the host credential store
+or reach the identity host. It therefore reports:
+
+- `Setup: complete` from the marker written by host-side setup;
+- `Auth: logged in` only after a real positive auth answer;
+- `Auth: not checked here (sandbox/network/keychain)` when the probe could not
+  run. **This is not a logout.**
+
+Plugin lifecycle hooks are local command hooks, not sandboxed shell commands.
+They run on the host, check auth themselves, and send the board updates.
 
 ### Requirements
 
@@ -115,7 +138,7 @@ invoke `$pushtodisplay:setup` directly.
 
 1. Install from the repository marketplace.
 2. Open `/hooks` and trust the `pushtodisplay` hooks.
-3. Run `$pushtodisplay:setup`.
+3. Run the setup helper from a normal terminal (see [Finish setup](#finish-setup)).
 4. Start a new Codex session.
 
 The board shows the session opening, what it is working on, each finished tool
@@ -128,10 +151,11 @@ required one:
 
 | Skill | Action |
 | --- | --- |
-| `$pushtodisplay:setup` | Log in if needed, send a test entry, and mark this Codex integration as set up. |
-| `$pushtodisplay:pushtodisplay-status` | Show auth, setup, board, panel, and label. |
-| `$pushtodisplay:pushtodisplay-test` | Send a test entry. |
+| `$pushtodisplay:setup` | Explain the host-side setup step, test send, and marker. |
+| `$pushtodisplay:pushtodisplay-status` | Show setup, resolved config, and sandbox-aware auth state. |
+| `$pushtodisplay:pushtodisplay-test` | Send a test entry from the host. |
 | `$pushtodisplay:pushtodisplay-clear` | Write a `log cleared` entry. |
+| `$pushtodisplay:pushtodisplay-login` | Re-authenticate on the host after an expired or revoked login. |
 
 `setup` is the supported entry point. `status`, `test`, and `clear` are optional
 diagnostics. The plugin includes the CLI it needs; users do not install or invoke
@@ -199,10 +223,12 @@ Codex hook event ──► hooks/hook.mjs ──► session state ──► mess
 - **`PostToolUse` is `async: true`.** Tool loops never wait on the board.
   `Stop`, `Interrupt`, and `SessionEnd` flush synchronously within their hook
   timeouts.
-- **Auth gating.** Auth is probed with `auth status --json`. Unknown waits for
-  the probe; known-bad drops updates (never buffers them); a stale bad answer is
-  re-probed at most once every 20 seconds. A successful login writes a global
-  hint, so sessions re-enable immediately.
+- **Auth gating.** Auth is probed with `auth status --json` by the hook process
+  on the host. Unknown waits for the probe; known-bad drops updates (never
+  buffers them); a stale bad answer is re-probed at most once every 20 seconds.
+  A successful login writes a global hint, so sessions re-enable immediately.
+  The status helper uses the same probe but treats an unreachable credential
+  store or network as `unavailable`, not as a logout.
 - **No coalescing.** Every entry is news; nothing is dropped for being
   superseded.
 
@@ -243,18 +269,26 @@ cannot be distinguished from success by the hook contract and is posted `OK`.
 1. Open `/hooks` and confirm the `pushtodisplay` hook is trusted. A new or
    changed plugin is skipped until reviewed.
 2. Check `PUSHTODISPLAY_DISABLED` is not `1`.
-3. Run `$pushtodisplay:setup`. A fresh install sends nothing until this setup
-   step has completed, even if another integration already logged in.
+3. Run the setup helper from a normal terminal. A fresh install sends nothing
+   until this setup step has completed, even if another integration already
+   logged in.
 4. Run `$pushtodisplay:pushtodisplay-status` and check the resolved board,
-   panel, auth, and setup state.
+   panel, setup marker, and auth state.
 5. Run `$pushtodisplay:pushtodisplay-test` and look for the `link OK` line.
 
-**Setup asks for network approval.**
+**Setup says it cannot reach the credential store or network.**
 
-Approve it once. Setup needs to reach `idp.pushtodisplay.com` and
-`api.pushtodisplay.com`. If Codex rejects escalation or you deny it, run the
-setup helper from a normal terminal with network access; it writes the same
-setup marker and Codex will pick it up.
+That is the Codex sandbox, not a logout. Run the setup helper from a normal
+terminal with the same user account; it writes the setup marker Codex picks up.
+If your client offers a one-time escalated command, approve it once. If
+escalation was denied, use the terminal instead of retrying.
+
+**Status says `Auth: not checked here`.**
+
+Expected inside Codex's sandbox. The status helper cannot read the host
+credential store or network. It is not a login failure and does not undo a
+completed setup. Hooks run on the host and check auth themselves; run `status`
+from a normal terminal if you need a positive auth answer.
 
 **Updates stop after working for a while.**
 
@@ -296,6 +330,8 @@ The tests cover:
 - every hook event fixture -> expected line and status;
 - queue order, consecutive dedupe, bounded backlog, spacing, and deadlines;
 - auth unknown/known-bad/lazy-retry/login-hint behaviour;
+- setup marker vs. sandboxed auth: `unavailable` never renders as “not logged in”;
+- one-outcome helper messaging for setup and login failures;
 - manifest, hook wiring, marketplace, command, and skill validation.
 
 The plugin is plain JavaScript with JSDoc types. `npm run typecheck` checks the
@@ -317,7 +353,8 @@ build step and no generated `dist/`.
 | `lib/describe.mjs` | Tool/approval descriptions and failure detection. |
 | `lib/queue.mjs` | Order, dedupe, bounded backlog, ≥1.2 s spacing. |
 | `lib/auth-gate.mjs` | Unknown / authed / known-bad, lazy retry, login hint. |
-| `lib/cli-adapter.mjs` | CLI resolution, argv mapping, auth probe. |
+| `lib/cli-adapter.mjs` | CLI resolution, argv mapping, tri-state auth probe. |
+| `lib/status.mjs` | Setup marker + auth state rendering for the operator helper. |
 | `lib/session-state.mjs` | Per-session state, atomic writes, lock. |
 | `lib/sender.mjs` | Apply an event, require setup + auth, drain the queue. |
 | `lib/hook-events.mjs` | Codex hook event -> message mapping. |
@@ -356,8 +393,10 @@ traffic) requires being signed in to Codex.
 
 ## Security
 
-Codex plugins and hooks run with your user's permissions. Review the hook
-source (`hooks/hook.mjs` and `lib/`) before trusting it. The plugin only:
+Codex plugins and hooks run with your user's permissions. Local lifecycle hooks
+run outside the model's command sandbox, so they can read the same credential
+store and reach the same network as Codex itself. Review the hook source
+(`hooks/hook.mjs` and `lib/`) before trusting it. The plugin only:
 
 - reads the hook event JSON on stdin;
 - reads/writes its own state under `~/.cache/pushtodisplay/codex/`;

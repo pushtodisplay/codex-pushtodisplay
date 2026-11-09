@@ -50,8 +50,11 @@ test("status reports the resolved CLI, config, and auth state", async () => {
     });
     assert.equal(result.code, 0);
     const status = JSON.parse(result.stdout);
+    assert.equal(status.auth.state, "unauthenticated");
+    assert.equal(status.authChecked, true);
     assert.equal(status.authenticated, false);
     assert.equal(status.setup, true);
+    assert.ok(status.setupCompletedAt > 0);
     assert.ok(status.setupFile.endsWith("setup.json"));
     assert.equal(status.panel, 2);
     assert.equal(status.label, "ci");
@@ -66,6 +69,45 @@ test("status reports the resolved CLI, config, and auth state", async () => {
   }
 });
 
+test("status with a setup marker and an unavailable auth probe does not claim logout", async () => {
+  const harness = createHarness({ setup: true });
+  try {
+    const result = await runScript(harness, ["status"], {
+      FAKE_PTD_AUTH_MODE: "unavailable",
+    });
+    assert.equal(result.code, 0);
+    assert.match(result.stdout, /^Setup: {4}complete$/m);
+    assert.match(result.stdout, /^Auth: {5}not checked here/m);
+    assert.equal(result.stdout.includes("not logged in"), false);
+
+    const json = await runScript(harness, ["status", "--json"], {
+      FAKE_PTD_AUTH_MODE: "unavailable",
+    });
+    const status = JSON.parse(json.stdout);
+    assert.equal(status.setup, true);
+    assert.equal(status.auth.state, "unavailable");
+    assert.equal(status.authChecked, false);
+    assert.equal(status.authenticated, null);
+  } finally {
+    harness.cleanup();
+  }
+});
+
+test("status without a setup marker still says setup is required", async () => {
+  const harness = createHarness({ setup: false });
+  try {
+    const result = await runScript(harness, ["status"], {
+      FAKE_PTD_AUTH_MODE: "unavailable",
+    });
+    assert.equal(result.code, 0);
+    assert.match(result.stdout, /^Setup: {4}not complete — run: \$pushtodisplay:setup/m);
+    assert.match(result.stdout, /^Auth: {5}not checked here/m);
+    assert.equal(result.stdout.includes("not logged in"), false);
+  } finally {
+    harness.cleanup();
+  }
+});
+
 test("setup sends a test entry and writes the Codex setup marker", async () => {
   const harness = createHarness({ setup: false });
   try {
@@ -75,7 +117,10 @@ test("setup sends a test entry and writes the Codex setup marker", async () => {
       PUSHTODISPLAY_BOARD_ID: "board-9",
     });
     assert.equal(result.code, 0);
-    assert.match(result.stdout, /Setup complete for Codex/);
+    assert.match(result.stdout, /Push To Display setup complete for Codex/);
+    assert.match(result.stdout, /Test entry: ci link OK, panel 2 OK \d{2}:\d{2}\./);
+    assert.equal(result.stdout.includes("/hooks"), false, "success must not nag about hook trust");
+    assert.equal(result.stdout.trim().split("\n").length, 1, "setup should print one outcome line");
     assert.equal(harness.entries().length, 1);
     assert.match(harness.entries()[0]?.text ?? "", /^ci link OK, panel 2 OK \d{2}:\d{2}$/);
     assert.equal(isSetupComplete(harness.env), true);
@@ -90,6 +135,46 @@ test("setup does not mark completion when login still fails", async () => {
     const result = await runScript(harness, ["setup"], { FAKE_PTD_AUTH: "0" });
     assert.equal(result.code, 1);
     assert.equal(isSetupComplete(harness.env), false);
+    assert.equal(
+      (result.stderr.match(/normal terminal/g) ?? []).length,
+      1,
+      "login failure should produce one recovery hint, not one per layer",
+    );
+  } finally {
+    harness.cleanup();
+  }
+});
+
+test("setup in a sandbox prints one host-side recovery hint and never starts login", async () => {
+  const harness = createHarness({ setup: false });
+  try {
+    const result = await runScript(harness, ["setup"], {
+      FAKE_PTD_AUTH_MODE: "unavailable",
+    });
+    assert.equal(result.code, 1);
+    assert.equal(isSetupComplete(harness.env), false);
+    assert.equal(result.stdout.includes("device-code login"), false);
+    assert.match(result.stderr, /cannot reach the credential store or network/);
+    assert.match(result.stderr, /Run setup from a normal terminal/);
+    assert.equal((result.stderr.match(/normal terminal/g) ?? []).length, 1);
+    assert.equal(result.stderr.includes("Login exited"), false);
+  } finally {
+    harness.cleanup();
+  }
+});
+
+test("a failed login inside setup does not add a second network hint", async () => {
+  const harness = createHarness({ setup: false, auth: false });
+  try {
+    const result = await runScript(harness, ["setup"], {
+      FAKE_PTD_AUTH: "0",
+      FAKE_PTD_LOGIN_EXIT: "2",
+    });
+    assert.equal(result.code, 1);
+    assert.equal(isSetupComplete(harness.env), false);
+    assert.match(result.stderr, /Login failed \(exit 2\)/);
+    assert.equal((result.stderr.match(/normal terminal/g) ?? []).length, 1);
+    assert.equal(result.stderr.includes("Setup did not complete"), false);
   } finally {
     harness.cleanup();
   }
@@ -150,7 +235,7 @@ test("login fails clearly when the flow exits non-zero", async () => {
       FAKE_PTD_LOGIN_EXIT: "2",
     });
     assert.equal(result.code, 1);
-    assert.match(result.stderr, /Login exited with code 2/);
+    assert.match(result.stderr, /Login failed \(exit 2\)/);
     assert.equal(existsSync(path.join(harness.cache, "auth.json")), false);
   } finally {
     harness.cleanup();

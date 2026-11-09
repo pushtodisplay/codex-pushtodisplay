@@ -1,6 +1,6 @@
 {
   "name": "codex-pushtodisplay",
-  "version": "0.1.5",
+  "version": "0.2.0",
   "description": "Codex plugin that mirrors agent activity onto your Push To Display board as a shared, human-readable log",
   "type": "module",
   "license": "MIT",

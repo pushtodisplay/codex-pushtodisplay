@@ -9,37 +9,33 @@ Use this after setup is already complete and the account needs to log in again.
 On a fresh install, run the `setup` skill instead — login alone does not mark a
 new Codex integration as set up.
 
-Run the helper with **escalated permissions** so it can reach the Push To Display
-identity host. Use `sandbox_permissions: require_escalated` with the
-justification:
-
-> Push To Display login needs network access to idp.pushtodisplay.com.
+Login is a **host-side action**, like setup. It needs the OS credential store
+and the Push To Display identity host. Prefer a normal terminal with the same
+user account that runs Codex:
 
 ```bash
-SCRIPT="${PLUGIN_ROOT:+$PLUGIN_ROOT/scripts/pushtodisplay.mjs}"
-if [ ! -f "$SCRIPT" ]; then
-  SCRIPT="$(find "${CODEX_HOME:-$HOME/.codex}/plugins" -path '*pushtodisplay*/scripts/pushtodisplay.mjs' -print 2>/dev/null | sort | tail -n 1)"
-fi
+SCRIPT="$(find "${CODEX_HOME:-$HOME/.codex}/plugins" -path '*pushtodisplay*/scripts/pushtodisplay.mjs' -print 2>/dev/null | sort | tail -n 1)"
 if [ -z "$SCRIPT" ]; then
-  echo "codex-pushtodisplay helper not found; reinstall the plugin." >&2
+  echo "codex-pushtodisplay plugin not found; reinstall it." >&2
   exit 1
 fi
 node "$SCRIPT" login
 ```
 
-Codex should show one approval prompt. Tell the user to approve it once. If
-escalation is rejected or denied, the fallback is to run the same helper from a
-normal terminal with network access.
+If the client offers a one-time escalated command, the user may instead approve
+that once so the helper runs outside the sandbox. Use
+`sandbox_permissions: require_escalated` with the justification:
+
+> Push To Display login needs host network access to idp.pushtodisplay.com.
+
+If escalation is denied or unavailable, give the normal-terminal command once.
+Do not retry escalation and do not start a sandboxed login repeatedly.
 
 The helper uses the CLI bundled inside the plugin. Show the user the printed URL
-and code. Open the URL when possible. Never ask the user to paste credentials or
-tokens into the chat.
+and code when the helper is interactive. Open the URL when possible. Never ask
+the user to paste credentials or tokens into the chat.
 
-Verify with:
-
-```bash
-node "$SCRIPT" status
-```
-
-Report the auth and setup state in one sentence, once. The plugin re-probes auth
-on its own, so no restart is needed.
+Do not run `status` afterwards as a verification step inside the same sandbox:
+it cannot check host auth and will report `Auth: not checked here`. That is not
+a failed login. The helper's own final line is the outcome; do not repeat it.
+Reply with at most one short line.

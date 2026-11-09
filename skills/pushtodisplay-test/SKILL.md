@@ -20,6 +20,11 @@ fi
 node "$SCRIPT" test
 ```
 
-If the command reports that the user is not authenticated or setup is
-incomplete, tell them to run the `setup` skill. The plugin bundles its own CLI;
+The helper's output is already visible; do not repeat it. Reply with at most one
+short line.
+
+If the send fails because the helper cannot reach the credential store or
+network, it is running inside Codex's sandbox. Run the same helper from a normal
+terminal instead. If it reports that setup is incomplete, run
+`$pushtodisplay:setup` from a normal terminal. The plugin bundles its own CLI;
 do not suggest installing a separate one.

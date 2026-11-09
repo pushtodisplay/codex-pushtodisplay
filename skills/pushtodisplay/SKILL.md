@@ -67,9 +67,12 @@ Then:
 
 1. Open `/hooks` and trust the bundled `pushtodisplay` hooks. A plugin update
    that changes the hook script requires a new review.
-2. Run the `setup` skill. It logs in if needed, sends a test entry, and writes a
-   Codex-specific setup marker.
+2. Run the setup helper from a normal terminal (same user account). It logs in
+   if needed, sends a test entry, and writes a Codex-specific setup marker. A
+   one-time escalated command is an optional alternative; if escalation is
+   denied, use the terminal.
 
+Setup is host-side because it needs the OS credential store and network.
 Installation alone sends nothing. A login from opencode, pi, or another
 integration on the same machine does not enable this plugin; the setup marker is
 required.
@@ -85,14 +88,16 @@ required.
 
 | Skill | Action |
 | --- | --- |
-| `pushtodisplay:setup` | Log in if needed, send a test entry, and mark this Codex integration as set up. |
-| `pushtodisplay:pushtodisplay-status` | Show auth, setup, board, panel, and label. |
-| `pushtodisplay:pushtodisplay-test` | Send a test entry. |
+| `pushtodisplay:setup` | Explain and complete the host-side setup step. |
+| `pushtodisplay:pushtodisplay-status` | Show setup, resolved config, and sandbox-aware auth. |
+| `pushtodisplay:pushtodisplay-test` | Send a test entry from the host. |
 | `pushtodisplay:pushtodisplay-clear` | Write a `log cleared` entry. |
-| `pushtodisplay:pushtodisplay-login` | Re-authenticate after an expired or revoked login. |
+| `pushtodisplay:pushtodisplay-login` | Re-authenticate on the host after an expired or revoked login. |
 
 `setup` is the supported entry point. The other skills are optional diagnostics
-or re-authentication helpers.
+or re-authentication helpers. `status` inside Codex may report
+`Auth: not checked here`; that is the sandbox, not a logout. Hooks run on the
+host and check auth themselves.
 
 ## Configuration (environment variables)
 
@@ -114,11 +119,14 @@ PUSHTODISPLAY_PANEL=2 PUSHTODISPLAY_LABEL=qa codex
 ## Troubleshooting
 
 - **No lines at all** — check `/hooks`: plugin hooks must be trusted. Check
-  `PUSHTODISPLAY_DISABLED` and run the `setup` skill. A fresh install stays
-  silent until setup completes.
-- **Lines stop after a while** — auth is known-bad. Run the `setup` skill (or
-  the `pushtodisplay-login` skill if setup is already complete). Updates are
-  dropped, not buffered, until login; the hook re-probes every 20 seconds.
+  `PUSHTODISPLAY_DISABLED` and run host-side setup. A fresh install stays silent
+  until setup completes.
+- **Status says `Auth: not checked here`** — expected inside Codex's sandbox;
+  it is not a logout. Run `status` from a normal terminal for a positive auth
+  answer. Hooks check auth on the host themselves.
+- **Lines stop after a while** — auth is known-bad. Run host-side setup (or
+  `pushtodisplay-login` if setup is already complete). Updates are dropped, not
+  buffered, until login; the hook re-probes every 20 seconds.
 - **Helper not found** — reinstall the plugin. The plugin bundles its own CLI;
   do not install a separate one.
 - **Wrong panel** — `PUSHTODISPLAY_PANEL` must be 1–4; anything else falls back

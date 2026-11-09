@@ -1,79 +1,74 @@
 ---
 name: setup
-description: Set up codex-pushtodisplay after installation — trust hooks, log in if needed, send a test entry, and mark this Codex integration as set up.
+description: Set up codex-pushtodisplay after installation — host-side login if needed, a test entry, and a Codex setup marker.
 ---
 
 # Set up Push To Display for Codex
 
-Help the user get from “plugin installed” to “my board is updating.” Do not
-change their board or panel unless they ask.
+Setup is a **host-side action**. It needs the OS credential store and the
+Push To Display identity/API network. A shell command started by the model runs
+inside Codex's sandbox, where those may be unavailable. That is an environment
+problem, not a logout.
 
-## 1. Trust the bundled hooks
+## 1. Run setup where the host credentials live
 
-Codex does not run plugin hooks until the user reviews them. Tell the user to:
-
-1. Open `/hooks` in the Codex CLI (or **Settings > Hooks** in the desktop app).
-2. Review the `pushtodisplay` hook source.
-3. Trust the current definition.
-
-Hook trust is recorded against the hook definition and plugin content hash, so
-a plugin update can prompt for review again.
-
-## 2. Run the plugin setup
-
-Run the helper with **escalated permissions** so it can reach the Push To Display
-identity and API hosts. Use `sandbox_permissions: require_escalated` with the
-justification:
-
-> Push To Display setup needs network access to idp.pushtodisplay.com and api.pushtodisplay.com.
+Prefer a normal terminal with the same user account that runs Codex:
 
 ```bash
-SCRIPT="${PLUGIN_ROOT:+$PLUGIN_ROOT/scripts/pushtodisplay.mjs}"
-if [ ! -f "$SCRIPT" ]; then
-  SCRIPT="$(find "${CODEX_HOME:-$HOME/.codex}/plugins" -path '*pushtodisplay*/scripts/pushtodisplay.mjs' -print 2>/dev/null | sort | tail -n 1)"
-fi
+SCRIPT="$(find "${CODEX_HOME:-$HOME/.codex}/plugins" -path '*pushtodisplay*/scripts/pushtodisplay.mjs' -print 2>/dev/null | sort | tail -n 1)"
 if [ -z "$SCRIPT" ]; then
-  echo "codex-pushtodisplay helper not found; reinstall the plugin." >&2
+  echo "codex-pushtodisplay plugin not found; reinstall it." >&2
   exit 1
 fi
 node "$SCRIPT" setup
 ```
 
-Codex should show one approval prompt. Tell the user to approve it once. Do not
-send them to a separate terminal unless Codex rejects escalation or the user
-denies it.
+If the client offers a one-time escalated command, the user may instead approve
+that once so the same helper runs outside the sandbox. Use
+`sandbox_permissions: require_escalated` with the justification:
+
+> Push To Display setup needs host network access to idp.pushtodisplay.com and api.pushtodisplay.com.
+
+If escalation is denied or unavailable, give the normal-terminal command once.
+Do not retry escalation and do not try a sandboxed login repeatedly.
 
 The helper:
 
-- logs in with device-code OAuth if needed;
+- logs in with the device-code flow if needed;
 - sends one test entry to the configured board/panel;
-- writes a Codex-specific setup marker only after that test succeeds.
+- writes the Codex-specific setup marker only after both succeed;
+- prints one final outcome.
+
+If the helper says it cannot reach the credential store or network, it ran in
+the sandbox. Hand the user the normal-terminal command once. Do **not** run
+`status` to "confirm" in that same sandbox; its auth probe cannot see the host
+either. Do not describe this as "not logged in".
 
 If the user already logged in through opencode, pi, or another integration, the
 helper reuses the shared credential but still sends a Codex test and writes the
 marker. Without the marker, this plugin stays silent.
 
-Open the URL for the user when possible. Never ask them to paste a token into
-the chat.
+Open the login URL for the user when possible. Never ask them to paste a token
+into the chat.
 
-If the helper reports `fetch failed`, `getaddrinfo`, or a DNS error, it ran
-without network. Retry it with `sandbox_permissions: require_escalated`. Only if
-escalation is unavailable or denied should the user run the same helper from a
-normal terminal with network access; that also writes the shared setup marker.
+## 2. Do not repeat the helper
 
-If setup is blocked, explain the blocker once and give one next action. Do not
-repeat the same explanation.
+The helper's output is already visible. Do not print the outcome, the config
+block, or the recovery hint again. Reply with at most one short line.
 
-## 3. Confirm
+A successful setup ends with one line like:
 
-Run the status helper and summarize the result:
+`Push To Display setup complete for Codex. Board: … , panel … . Test entry: …`
 
-```bash
-node "$SCRIPT" status
-```
+The test entry should appear on the board as
+`<label> link OK, panel N OK HH:MM`.
 
-A successful setup shows `Auth: logged in` and `Setup: complete`. The test entry
-should read `<label> link OK, panel N OK HH:MM` on the board.
+## 3. Hook trust is troubleshooting only
+
+Do not mention hook trust after a successful setup. If the board stays empty in
+a later session, then check `/hooks`: if the `pushtodisplay` hooks show as
+untrusted, trust them once. Hook trust is recorded against the hook definition
+and plugin content hash, so a plugin update may require a new review.
 
 ## Configuration (only if the user asks)
 
@@ -85,6 +80,5 @@ should read `<label> link OK, panel N OK HH:MM` on the board.
 | `PUSHTODISPLAY_STEPS` | on | `0` posts milestones only. |
 | `PUSHTODISPLAY_DISABLED` | off | `1` disables the plugin. |
 
-Report problems plainly: untrusted hooks, a logged-out account, an incomplete
-setup marker, or a board/panel mismatch. Do not tell the user to install a
-separate `pushtodisplay` CLI; the plugin bundles it.
+The plugin bundles its own CLI. Do not tell the user to install a separate
+`pushtodisplay` CLI.

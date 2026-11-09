@@ -9,6 +9,7 @@ import test from "node:test";
 import {
   SETUP_VERSION,
   isSetupComplete,
+  loadSetupRecord,
   markSetupComplete,
   setupPath,
 } from "../lib/setup-state.mjs";
@@ -36,6 +37,7 @@ test("setup is incomplete until the marker is written", () => {
     assert.equal(record.panel, 2);
     assert.equal(record.label, "release");
     assert.equal(isSetupComplete(env), true);
+    assert.deepEqual(loadSetupRecord(env), record);
     const onDisk = JSON.parse(readFileSync(setupPath(env), "utf8"));
     assert.equal(onDisk.completedAt, record.completedAt);
   } finally {

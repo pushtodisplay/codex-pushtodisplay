@@ -21,4 +21,5 @@ node "$SCRIPT" clear
 ```
 
 The panel is a scrolling history; clearing writes a marker and does not delete
-past entries.
+past entries. The helper's output is already visible; do not repeat it — reply
+with at most one short line.
