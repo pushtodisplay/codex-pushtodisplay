@@ -84,9 +84,6 @@ function configLines(config) {
     `Board:    ${config.boardId || "default board"}`,
     `Panel:    ${config.panel}`,
     `Label:    ${agentLabel(config, cwd)}`,
-    `Steps:    ${config.steps ? "on" : "off"}`,
-    `Disabled: ${config.disabled ? "yes" : "no"}`,
-    `Cache:    ${cacheDir()}`,
   ].join("\n");
 }
 
@@ -117,10 +114,9 @@ async function status(argv) {
   process.stdout.write(
     [
       "Push To Display — codex-pushtodisplay",
-      `CLI:      ${data.cli}`,
       configLines(config),
-      `Auth:     ${authed ? "logged in" : "not logged in — run: node scripts/pushtodisplay.mjs setup"}`,
-      `Setup:    ${setup ? "complete" : "not complete — run: node scripts/pushtodisplay.mjs setup"}`,
+      `Auth:     ${authed ? "logged in" : "not logged in — run: $pushtodisplay:setup"}`,
+      `Setup:    ${setup ? "complete" : "not complete — run: $pushtodisplay:setup"}`,
     ].join("\n") + "\n",
   );
 }
@@ -173,7 +169,7 @@ async function login() {
       process.stdout.write("Logged in. Push To Display updates are enabled.\n");
     } else {
       process.stdout.write(
-        "Logged in. Next: run `node scripts/pushtodisplay.mjs setup` to finish this Codex integration.\n",
+        "Logged in. Next: run `$pushtodisplay:setup` to finish this Codex integration.\n",
       );
     }
   } else {
@@ -244,9 +240,7 @@ async function sendTestOrClear(action) {
     await sendPayload(payload, config.boardId, { pluginRoot });
   } catch (error) {
     if (isAuthFailure(error)) {
-      process.stderr.write(
-        "Not authenticated. Run: node scripts/pushtodisplay.mjs login\n",
-      );
+      process.stderr.write("Not authenticated. Run: $pushtodisplay:setup\n");
     } else if (isCliMissing(error)) {
       process.stderr.write(`${cliNotFoundMessage()}\n`);
     } else {

@@ -20,12 +20,9 @@ fi
 node "$SCRIPT" status
 ```
 
-Summarize in five short lines:
-
-- **Auth**: logged in or not; if not, run the `setup` skill.
-- **Setup**: complete or not; if not, run the `setup` skill.
-- **Board**: `PUSHTODISPLAY_BOARD_ID` or “default board”.
-- **Panel**: `PUSHTODISPLAY_PANEL` (1–4, default 1).
-- **Label**: `PUSHTODISPLAY_LABEL` or the workspace folder basename.
+Run the helper exactly once and relay its output verbatim. Do not run it a
+second time and do not add a separate summary; the helper already prints the
+board, panel, label, auth, and setup lines. If auth or setup is incomplete, tell
+the user to run the `setup` skill.
 
 The plugin bundles its own CLI; do not suggest installing a separate one.

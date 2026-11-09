@@ -297,7 +297,7 @@ build step and no generated `dist/`.
 
 | Path | Responsibility |
 | --- | --- |
-| `plugin.json` | Codex plugin manifest: identity, `skills`, `commands`. The `$schema` field is intentionally omitted; Codex 0.167 treats it as the portable format and does not load bundled hooks in that mode. |
+| `plugin.json` | Codex plugin manifest: identity and `skills`. The `$schema` field is intentionally omitted; Codex 0.167 treats it as the portable format and does not load bundled hooks in that mode. |
 | `.codex-plugin/plugin.json` | Codex 0.167 compatibility manifest: `hooks`, `interface`, and `extensions.com.openai.onboardingSkill`. |
 | `.agents/plugins/marketplace.json` | Repo marketplace entry (`source.path: "./"`). |
 | `hooks/hooks.json` | Lifecycle wiring; `${PLUGIN_ROOT}/hooks/hook.mjs`. |
@@ -315,7 +315,7 @@ build step and no generated `dist/`.
 | `lib/setup-state.mjs` | Per-Codex setup marker; prevents shared credentials from silently enabling Codex. |
 | `scripts/pushtodisplay.mjs` | Internal setup/status helper used by the skills. |
 | `vendor/pushtodisplay/` | Pinned `pushtodisplay` CLI 0.1.19; no install step needed. |
-| `skills/`, `commands/` | Usage guidance and command skills. |
+| `skills/` | Usage guidance and action skills. |
 | `docs/distribution.md` | Alternative npm/developer paths and the public-directory blocker. |
 | `docs/publishing.md` | First publish and ongoing release steps. |
 | `.github/workflows/publish.yml` | OIDC/Trusted Publishing release workflow. |

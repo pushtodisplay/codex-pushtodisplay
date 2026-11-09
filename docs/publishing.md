@@ -40,8 +40,7 @@ npm pack --dry-run
 ```
 
 Review the dry-run file list. It should contain the manifests, `hooks/`, `lib/`,
-`scripts/`, `skills/`, `commands/`, `vendor/pushtodisplay/`, `docs/`, README, and
-LICENSE. It must not contain `test/`, `eslint.config.mjs`, `tsconfig.json`,
+`scripts/`, `skills/`, `vendor/pushtodisplay/`, `docs/`, README, and LICENSE. It must not contain `test/`, `eslint.config.mjs`, `tsconfig.json`,
 `.github/`, `.agents/`, or `node_modules/`.
 
 Bootstrap the package with a local publish. A local publish cannot generate npm

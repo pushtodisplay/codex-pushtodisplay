@@ -55,8 +55,8 @@ test("root plugin.json is a Codex manifest with identity and components", () => 
   assert.ok(Array.isArray(plugin.keywords) && plugin.keywords.includes("codex-plugin"));
   assert.equal(plugin.skills, "./skills/");
   assert.ok(existsSync(path.join(repoRoot, plugin.skills)));
-  assert.equal(plugin.commands, "./commands/");
-  assert.ok(existsSync(path.join(repoRoot, plugin.commands)));
+  assert.equal(plugin.commands, undefined, "commands are skills in Codex 0.167");
+  assert.equal(existsSync(path.join(repoRoot, "commands")), false);
 
   // Codex 0.167 treats a root `$schema` as the portable Agent Plugins format
   // and does not load bundled lifecycle hooks in that mode. The compatibility
@@ -74,7 +74,7 @@ test("the .codex-plugin compatibility manifest carries hooks, UI, and onboarding
   assert.equal(legacy.hooks, "./hooks/hooks.json");
   assert.ok(existsSync(path.join(repoRoot, legacy.hooks)));
   assert.equal(legacy.skills, "./skills/");
-  assert.equal(legacy.commands, "./commands/");
+  assert.equal(legacy.commands, undefined, "commands are skills in Codex 0.167");
   assert.equal(legacy.interface.displayName, "Push To Display");
   assert.equal(legacy.interface.developerName, "Goban Source LLC");
   assert.equal(legacy.interface.websiteURL, "https://pushtodisplay.com");
@@ -146,22 +146,6 @@ test("hooks.json wires every lifecycle event to the one silent mirror", () => {
   assert.equal(hooks.hooks.PermissionRequest[0].hooks[0].async, undefined, "approval must not wait");
 });
 
-test("commands are real Codex plugin commands with frontmatter descriptions", () => {
-  const expected = [
-    "pushtodisplay-clear",
-    "pushtodisplay-login",
-    "pushtodisplay-status",
-    "pushtodisplay-test",
-  ];
-  for (const name of expected) {
-    const file = path.join(repoRoot, "commands", `${name}.md`);
-    assert.ok(existsSync(file), `${name}.md is missing`);
-    const parsed = frontmatter(readText(`commands/${name}.md`));
-    assert.ok(parsed.frontmatter.description?.length > 10, `${name} needs a description`);
-    assert.ok(parsed.body.trim().length > 20, `${name} needs a command template body`);
-  }
-});
-
 test("skills carry required frontmatter", () => {
   for (const name of [
     "setup",
@@ -202,7 +186,7 @@ test("package scripts and published files are release-ready", () => {
   assert.equal(pkg.dependencies, undefined, "the CLI is vendored, not installed from npm");
   assert.equal(pkg.bundleDependencies, undefined);
 
-  for (const entry of ["hooks", "lib", "scripts", "skills", "commands", "plugin.json", "vendor"]) {
+  for (const entry of ["hooks", "lib", "scripts", "skills", "plugin.json", "vendor"]) {
     assert.ok(pkg.files.includes(entry), `package files should include ${entry}`);
   }
   assert.ok(pkg.files.includes(".codex-plugin"));
@@ -260,17 +244,13 @@ test("README and release docs document the simple install path and the directory
   }
 });
 
-test("user-facing skills and commands use the plugin helper, not a separate CLI", () => {
+test("user-facing skills use the plugin helper, not a separate CLI", () => {
   const files = [
     "skills/setup/SKILL.md",
     "skills/pushtodisplay-login/SKILL.md",
     "skills/pushtodisplay-status/SKILL.md",
     "skills/pushtodisplay-test/SKILL.md",
     "skills/pushtodisplay-clear/SKILL.md",
-    "commands/pushtodisplay-login.md",
-    "commands/pushtodisplay-status.md",
-    "commands/pushtodisplay-test.md",
-    "commands/pushtodisplay-clear.md",
   ];
   for (const file of files) {
     const text = readText(file);
